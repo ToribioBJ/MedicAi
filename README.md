@@ -78,6 +78,3 @@ Después de clonar el repositorio, debes configurar tanto el backend como el fro
    ```bash
    npm run dev
    ```
-
-## 🔐 Seguridad
-**NUNCA** subas tus archivos `.env` a GitHub. Estas configuraciones deben mantenerse en tu ambiente local para proteger tus contraseñas y claves de API.
