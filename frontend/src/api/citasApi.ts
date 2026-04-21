@@ -2,8 +2,7 @@ import { api } from './client';
 
 export interface Cita {
   id: number;
-  paciente_id: number;
-  medico_id: number;
+  usuario_id: number;
   fecha_hora: string;  // ISO
   duracion_min: number;
   motivo?: string | null;
@@ -13,19 +12,17 @@ export interface Cita {
 }
 
 export interface CitaCreate {
-  paciente_id: number;
-  medico_id: number;
+  usuario_id: number;
   fecha_hora: string;
   duracion_min?: number;
   motivo?: string;
   notas?: string;
 }
 
-export type CitaUpdate = Partial<Omit<Cita, 'id' | 'creada_en' | 'paciente_id' | 'medico_id'>>;
+export type CitaUpdate = Partial<Omit<Cita, 'id' | 'creada_en' | 'usuario_id'>>;
 
 export const listarCitas = (params?: {
-  paciente_id?: number;
-  medico_id?: number;
+  usuario_id?: number;
   estado?: string;
   desde?: string;
   hasta?: string;

@@ -6,7 +6,6 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 class UsuarioBase(BaseModel):
     email: EmailStr
     nombre: str
-    rol: str  # admin | medico | recepcion
 
 
 class UsuarioCreate(UsuarioBase):
@@ -15,7 +14,6 @@ class UsuarioCreate(UsuarioBase):
 
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
-    rol: Optional[str] = None
     activo: Optional[bool] = None
     password: Optional[str] = None
 

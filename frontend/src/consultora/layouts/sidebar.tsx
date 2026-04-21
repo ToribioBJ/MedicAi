@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   MessageSquare, CalendarDays, Settings, 
-  Plus, History, Trash2, User2, ChevronRight
+  Plus, History, Trash2, User2, ChevronRight, LogOut
 } from 'lucide-react';
 import logoMedicAI from '../../img/logo-medica.png';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,6 +10,7 @@ import {
   listarConversaciones, eliminarConversacion, 
   type Conversacion 
 } from '../../api/chatbotApi';
+import { useAuth } from '../../context/AuthContext';
 
 type NavItem = {
   to: string;
@@ -22,8 +23,9 @@ const navigation: NavItem[] = [
   { to: '/calendario', label: 'Calendario',      icon: CalendarDays },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean, closeMobile?: () => void }) => {
   const { isDark, accentColor } = useTheme();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { id: currentChatId } = useParams();
   const { pathname } = useLocation();
@@ -35,11 +37,14 @@ export const Sidebar = () => {
   }, [pathname]);
 
   const actualizarHistorial = () => {
-    listarConversaciones().then(r => setConversaciones(r.data)).catch(() => {});
+    if (user?.id) {
+      listarConversaciones(user.id).then(r => setConversaciones(r.data)).catch(() => {});
+    }
   };
 
   const handleNuevoChat = () => {
     navigate('/chatbot');
+    closeMobile?.();
   };
 
   const handleEliminarChat = async (id: number) => {
@@ -58,6 +63,7 @@ export const Sidebar = () => {
   const NavButton = ({ to, label, icon: Icon, isActive }: { to: string, label: string, icon: any, isActive: boolean }) => (
     <NavLink
       to={to}
+      onClick={() => closeMobile?.()}
       className={`relative w-full h-[60px] flex items-center group/item transition-all duration-300 ${
         isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
       }`}
@@ -78,7 +84,9 @@ export const Sidebar = () => {
       </div>
       
       {/* Sliding Label */}
-      <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ml-2 whitespace-nowrap overflow-hidden flex items-center justify-between pr-6">
+      <div className={`flex-1 transition-all duration-500 ml-2 whitespace-nowrap overflow-hidden flex items-center justify-between pr-6 ${
+        isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}>
         <span className={`font-black text-[14px] ${
           isActive ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-white/50' : 'text-slate-600')
         }`}>
@@ -94,8 +102,10 @@ export const Sidebar = () => {
   );
 
   return (
-    <aside className={`group w-20 hover:w-72 h-screen flex flex-col z-30 transition-all duration-500 ease-out shrink-0 overflow-hidden glass border-r ${
-      isDark ? 'border-white/5 shadow-2xl shadow-black/40' : 'border-slate-200/60 shadow-xl'
+    <aside className={`group fixed md:relative top-0 left-0 z-50 md:z-30 h-screen flex flex-col transition-all duration-300 ease-out shrink-0 overflow-hidden glass border-r ${
+      isDark ? 'border-white/5 shadow-2xl shadow-black/40 bg-[#0B0F19] md:bg-transparent' : 'border-slate-200/60 shadow-xl bg-white md:bg-transparent'
+    } ${
+      isMobileOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full md:translate-x-0 w-[280px] md:w-20 md:hover:w-72'
     }`}>
       
       {/* Branding */}
@@ -105,7 +115,9 @@ export const Sidebar = () => {
               <img src={logoMedicAI} alt="MedicAI" className="w-10 h-10 object-contain drop-shadow-xl" />
             </div>
          </div>
-         <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 ml-5 whitespace-nowrap overflow-hidden">
+         <div className={`transition-all duration-500 ml-5 whitespace-nowrap overflow-hidden ${
+            isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+         }`}>
             <div className={`font-black text-2xl tracking-tighter leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>MedicAI</div>
             <div className={`text-[10px] font-black uppercase tracking-[0.3em] mt-1 ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Inteligencia Médica</div>
          </div>
@@ -123,7 +135,9 @@ export const Sidebar = () => {
                 <Plus size={26} className="text-white" strokeWidth={3} />
              </div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden flex flex-col items-start leading-none">
+          <div className={`transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden flex flex-col items-start leading-none ${
+             isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}>
             <span className={`text-[15px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Nueva consulta</span>
             <span className={`text-[10px] font-bold mt-1 ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Iniciar nuevo triaje</span>
           </div>
@@ -143,7 +157,9 @@ export const Sidebar = () => {
         ))}
 
         {/* History Section */}
-        <div className="pt-8 opacity-0 group-hover:opacity-100 transition-all duration-500 px-6">
+        <div className={`pt-8 transition-all duration-500 px-6 ${
+          isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
           <div className="mb-4 flex items-center gap-2">
             <History size={14} className={isDark ? 'text-white/20' : 'text-slate-400'} />
             <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Historial</span>
@@ -155,7 +171,7 @@ export const Sidebar = () => {
             {conversaciones.slice(0, 5).map(c => (
               <div
                 key={c.id}
-                onClick={() => navigate(`/chatbot/${c.id}`)}
+                onClick={() => { navigate(`/chatbot/${c.id}`); closeMobile?.(); }}
                 className={`group/item relative flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-300 ${
                   Number(currentChatId) === c.id 
                     ? (isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-50 border border-slate-100')
@@ -188,15 +204,28 @@ export const Sidebar = () => {
           isActive={pathname === '/configuracion'} 
         />
         
-        <div className="flex items-center px-4 py-6">
+        <div className="flex items-center px-4 py-6 group/user mt-auto relative overflow-hidden">
            <div className="w-12 h-full flex items-center justify-center shrink-0">
              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-inner bg-gradient-to-br from-slate-100 to-slate-200 dark:from-white/5 dark:to-white/10 border border-black/5 dark:border-white/5">
                 <User2 size={22} className={isDark ? 'text-white/70' : 'text-slate-600'} />
              </div>
            </div>
-           <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden">
-              <div className={`font-black text-[13px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Dr. García</div>
-              <div className={`text-[10px] font-bold ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Director Médico</div>
+           
+           <div className={`flex-1 flex items-center justify-between transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden ${
+              isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+           }`}>
+              <div className="flex flex-col overflow-hidden pr-2">
+                 <div className={`font-black text-[13px] truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{user?.nombre || 'Usuario'}</div>
+                 <div className={`text-[10px] font-bold truncate ${isDark ? 'text-white/30' : 'text-slate-400'}`}>{user?.email || 'Panel Principal'}</div>
+              </div>
+              
+              <button 
+                onClick={() => { logout(); navigate('/login'); }}
+                title="Cerrar sesión"
+                className={`shrink-0 p-2 rounded-xl transition-all duration-300 hover:bg-rose-500/10 hover:text-rose-500 ${isDark ? 'text-white/30' : 'text-slate-400'}`}
+              >
+                <LogOut size={18} />
+              </button>
            </div>
         </div>
       </div>

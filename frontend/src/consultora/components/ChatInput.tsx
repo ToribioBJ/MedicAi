@@ -66,7 +66,7 @@ export const ChatInput = ({ input, setInput, onSend, isTyping, hasMessages, isTt
   };
 
   return (
-    <div className={`p-6 pb-8 transition-all duration-500 w-full bg-transparent`}>
+    <div className={`p-4 md:p-6 pb-4 md:pb-8 transition-all duration-500 w-full bg-slate-50/80 dark:bg-[#0B0F19]/80 backdrop-blur-md`}>
       <div className="max-w-3xl mx-auto relative bg-transparent">
 
         <div className={`flex items-center gap-2 p-1.5 border rounded-full transition-all duration-300 bg-transparent ${isDark
@@ -99,8 +99,8 @@ export const ChatInput = ({ input, setInput, onSend, isTyping, hasMessages, isTt
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Escuchando..." : "Mensaje a MedicAI"}
-            className="flex-1 bg-transparent border-none focus:ring-0 py-2.5 px-1 text-[16px] dark:text-white dark:placeholder-white/20 text-slate-800 placeholder-slate-400 outline-none w-full min-w-0"
+            placeholder={isListening ? "Escuchando..." : "Mensaje..."}
+            className="flex-1 bg-transparent border-none focus:ring-0 py-2.5 px-1 text-[15px] md:text-[16px] dark:text-white dark:placeholder-white/20 text-slate-800 placeholder-slate-400 outline-none w-full min-w-0"
             readOnly={isListening}
           />
 

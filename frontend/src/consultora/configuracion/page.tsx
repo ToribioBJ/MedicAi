@@ -37,7 +37,7 @@ function Toggle({ id, checked, onChange }: { id: string; checked: boolean; onCha
 // ─── Card de sección ──────────────────────────────────────────────────────────
 function Card({ title, icon: Icon, children }: {
   title: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
   children: React.ReactNode;
 }) {
   const { isDark } = useTheme();
@@ -226,41 +226,6 @@ export default function ConfiguracionPage() {
 
           <Row label="Modo compacto" description="Reduce el espaciado para ver más contenido">
             <Toggle id="toggle-compact" checked={compactMode} onChange={setCompactMode} />
-          </Row>
-
-          <Row label="Animaciones" description="Activa o desactiva las transiciones de la interfaz">
-            <Toggle id="toggle-animaciones" checked={animations} onChange={setAnimations} />
-          </Row>
-        </Card>
-
-        {/* ── Idioma / región ──────────────────────────────────────────── */}
-        <Card title="Idioma y Región" icon={Globe}>
-          <Row label="Idioma de la interfaz" description="Selecciona tu idioma preferido">
-            <select
-              id="select-idioma"
-              className={`text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 transition-colors ${isDark
-                ? 'bg-white/10 border-white/20 text-white focus:ring-white/20'
-                : 'bg-white border-gray-200 text-gray-700 focus:ring-blue-200'
-                }`}
-            >
-              <option value="es">🇵🇪 Español</option>
-              <option value="en">🇺🇸 English</option>
-              <option value="pt">🇧🇷 Português</option>
-            </select>
-          </Row>
-
-          <Row label="Formato de fecha">
-            <select
-              id="select-fecha"
-              className={`text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 transition-colors ${isDark
-                ? 'bg-white/10 border-white/20 text-white focus:ring-white/20'
-                : 'bg-white border-gray-200 text-gray-700 focus:ring-blue-200'
-                }`}
-            >
-              <option value="dmy">DD/MM/YYYY</option>
-              <option value="mdy">MM/DD/YYYY</option>
-              <option value="ymd">YYYY-MM-DD</option>
-            </select>
           </Row>
         </Card>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { Volume2, VolumeX } from 'lucide-react';
 
 import { ChatInput } from '../components/ChatInput';
@@ -12,13 +13,13 @@ import {
 
 export const ChatbotPage = () => {
   const { accentColor } = useTheme();
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [input, setInput] = useState('');
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [pacienteId, setPacienteId] = useState<number | undefined>();
   const [isTtsEnabled, setIsTtsEnabled] = useState(true);
 
   // Sincronizar mensajes cuando cambia el ID de la URL
@@ -26,7 +27,6 @@ export const ChatbotPage = () => {
     if (id) {
       obtenerDetalleChat(Number(id)).then(r => {
         setMensajes(r.data.mensajes);
-        if (r.data.paciente_id) setPacienteId(r.data.paciente_id);
       }).catch(() => {
         navigate('/chatbot'); // Si el ID no es válido, volver al inicio
       });
@@ -48,7 +48,7 @@ export const ChatbotPage = () => {
 
     try {
       const convId = id ? Number(id) : undefined;
-      const { data } = await enviarMensajeChat(textToSend, convId, pacienteId);
+      const { data } = await enviarMensajeChat(textToSend, convId, user?.id);
 
       const botMsg: Mensaje = { role: 'assistant', contenido: data.respuesta };
       setMensajes(prev => [...prev, botMsg]);
@@ -77,8 +77,8 @@ export const ChatbotPage = () => {
 
   return (
     <div className="flex-1 flex flex-col relative bg-slate-50 dark:bg-transparent h-full">
-      <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8">
-        <div className="max-w-3xl mx-auto flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto px-4 md:px-12 py-4 md:py-8">
+        <div className="max-w-3xl mx-auto flex flex-col h-full pb-20">
           <ChatContainer
             mensajes={mensajes}
             isTyping={isTyping}

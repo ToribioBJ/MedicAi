@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Cita, Paciente, Medico
+from app.models import Cita, Usuario
 from app.schemas.cita import CitaCreate, CitaUpdate, CitaOut
 
 router = APIRouter(prefix="/api/citas", tags=["Citas"])
@@ -13,15 +13,13 @@ router = APIRouter(prefix="/api/citas", tags=["Citas"])
 @router.get("/", response_model=List[CitaOut])
 def listar(
     db: Session = Depends(get_db),
-    paciente_id: Optional[int] = None,
-    medico_id: Optional[int] = None,
+    usuario_id: Optional[int] = None,
     estado: Optional[str] = None,
     desde: Optional[datetime] = Query(None),
     hasta: Optional[datetime] = Query(None),
 ):
     q = db.query(Cita)
-    if paciente_id: q = q.filter(Cita.paciente_id == paciente_id)
-    if medico_id:   q = q.filter(Cita.medico_id == medico_id)
+    if usuario_id:  q = q.filter(Cita.usuario_id == usuario_id)
     if estado:      q = q.filter(Cita.estado == estado)
     if desde:       q = q.filter(Cita.fecha_hora >= desde)
     if hasta:       q = q.filter(Cita.fecha_hora <= hasta)
@@ -38,10 +36,8 @@ def obtener(cita_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=CitaOut, status_code=201)
 def crear(data: CitaCreate, db: Session = Depends(get_db)):
-    if not db.query(Paciente).filter(Paciente.id == data.paciente_id).first():
-        raise HTTPException(400, "Paciente no existe")
-    if not db.query(Medico).filter(Medico.id == data.medico_id).first():
-        raise HTTPException(400, "Médico no existe")
+    if not db.query(Usuario).filter(Usuario.id == data.usuario_id).first():
+        raise HTTPException(400, "Usuario no existe")
     c = Cita(**data.model_dump())
     db.add(c); db.commit(); db.refresh(c)
     return c

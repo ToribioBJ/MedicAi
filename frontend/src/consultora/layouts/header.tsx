@@ -8,7 +8,7 @@ const meta: Record<string, { title: string; subtitle: string }> = {
   '/nosotros': { title: 'Sobre MedicAI', subtitle: 'Conoce a tu asistente de salud' },
 };
 
-export const Header = () => {
+export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { pathname } = useLocation();
   const { isDark } = useTheme();
   const info = meta[pathname] || { title: 'MedicAI', subtitle: 'Consultora médica' };
@@ -17,7 +17,9 @@ export const Header = () => {
     <header className={`sticky top-0 w-full px-8 py-4 flex items-center justify-between z-20 glass border-b transition-all duration-500 ${isDark ? 'border-white/5' : 'border-slate-200/50'
       }`}>
       <div className="flex items-center gap-4">
-        <button className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+        <button 
+          onClick={onMenuClick}
+          className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors">
           <Menu size={20} className={isDark ? 'text-white/70' : 'text-slate-600'} />
         </button>
         <div>

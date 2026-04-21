@@ -3,10 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import engine, Base
-from app.models import (  # noqa: F401  (registra los modelos en Base.metadata)
-    Usuario, Paciente, Medico, Cita, ConsultaTriaje, HistorialClinico, MedicamentoRecetado
+from app.models import (
+    Usuario, Cita, Conversacion, MensajeChat
 )
-from app.routers import pacientes, usuarios, medicos, citas, historial, chatbot
+from app.routers import usuarios, citas, chatbot, auth
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,18 +29,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(usuarios.router)
-app.include_router(pacientes.router)
-app.include_router(medicos.router)
 app.include_router(citas.router)
-app.include_router(historial.router)
 app.include_router(chatbot.router)
+app.include_router(auth.router)
 
 
 @app.get("/", tags=["Health"])

@@ -30,7 +30,6 @@ def crear(data: UsuarioCreate, db: Session = Depends(get_db)):
     u = Usuario(
         email=data.email,
         nombre=data.nombre,
-        rol=data.rol,
         password_hash=hash_password(data.password),
     )
     db.add(u); db.commit(); db.refresh(u)

@@ -7,6 +7,7 @@ import {
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Clock, Trash2 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 import { listarCitas, eliminarCita, type Cita } from '../../api/citasApi';
 
@@ -20,14 +21,16 @@ const estadoColor: Record<string, string> = {
 
 const CalendarioPage = () => {
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [citas, setCitas] = useState<Cita[]>([]);
   const [error, setError] = useState('');
 
   const cargar = async () => {
+    if (!user?.id) return;
     try {
-      const { data } = await listarCitas();
+      const { data } = await listarCitas({ usuario_id: user.id });
       setCitas(data);
     } catch { 
       setError('No se pudieron cargar las citas. Asegúrate de que el servidor esté activo.'); 
@@ -35,8 +38,8 @@ const CalendarioPage = () => {
   };
 
   useEffect(() => {
-    cargar();
-  }, []);
+    if (user?.id) cargar();
+  }, [user?.id]);
 
   const borrar = async (id: number) => {
     if (!confirm('¿Eliminar esta cita?')) return;

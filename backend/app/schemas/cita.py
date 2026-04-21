@@ -4,8 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class CitaBase(BaseModel):
-    paciente_id: int
-    medico_id: int
+    usuario_id: int
     fecha_hora: datetime
     duracion_min: int = 30
     motivo: Optional[str] = None
