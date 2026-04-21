@@ -8,6 +8,21 @@ MedicAI es un sistema médico avanzado que integra un backend en Python (FastAPI
 *   **Interacción por Voz**: Dictado integrado (`Speech-to-Text`) para hablarle al chatbot y lectura de respuestas en voz alta (`Text-to-Speech`).
 *   **Historial y Calendario**: Manejo automático de sesiones de chat, registro de historial clínico e integración de agenda.
 *   **Diseño Dinámico**: Interfaz de usuario moderna impulsada por Tailwind CSS con modos claro y oscuro.
+
+## 🛠️ Stack Tecnológico
+
+### Backend
+- **Framework:** [FastAPI](https://fastapi.tiangolo.com/)
+- **Base de Datos:** MySQL con [SQLAlchemy ORM](https://www.sqlalchemy.org/)
+- **IA:** [Groq Cloud SDK](https://github.com/groq/groq-python) (Llama 3.3)
+- **Seguridad:** OAuth2 con JWT (python-jose) y BCrypt (passlib)
+
+### Frontend
+- **Framework:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Estilos:** [Tailwind CSS 4](https://tailwindcss.com/)
+- **Iconografía:** [Lucide React](https://lucide.dev/)
+- **HTTP Client:** [Axios](https://axios-http.com/)
+
 ## Requisitos Previos
 
 Antes de ejecutar el proyecto, asegúrate de tener instalado en tu computadora:
