@@ -2,20 +2,17 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import {
-  Plus, Search, MessageSquare, X
-} from 'lucide-react';
+import { MessageSquare, X } from 'lucide-react';
 
 import { ChatInput } from '../components/ChatInput';
 import { ChatContainer } from '../components/ChatContainer';
 import {
   enviarMensajeChat, obtenerDetalleChat,
-  listarConversaciones,
-  type Mensaje, type Conversacion
+  type Mensaje
 } from '../../api/chatbotApi';
 
 export const ChatbotPage = () => {
-  const { accentColor, isDark } = useTheme();
+  const { isDark } = useTheme();
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,24 +22,12 @@ export const ChatbotPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isTtsEnabled, setIsTtsEnabled] = useState(true);
 
-  // States for subhistory sidebar and current chat search
-  const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
-  const [searchChatQuery, setSearchChatQuery] = useState('');
+  // States for subhistory sidebar and active navigation
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
 
-  const cargarConversaciones = () => {
-    listarConversaciones(user?.id).then(r => {
-      setConversaciones(r.data);
-    }).catch(err => {
-      console.error('Error al listar conversaciones:', err);
-    });
-  };
-
-  // Sincronizar mensajes cuando cambia el ID de la URL y cargar historial
+  // Sincronizar mensajes cuando cambia el ID de la URL
   useEffect(() => {
-    cargarConversaciones();
-
     if (id) {
       obtenerDetalleChat(Number(id)).then(r => {
         setMensajes(r.data.mensajes);
@@ -52,7 +37,7 @@ export const ChatbotPage = () => {
     } else {
       setMensajes([]);
     }
-  }, [id, navigate, user?.id]);
+  }, [id, navigate]);
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
@@ -82,8 +67,6 @@ export const ChatbotPage = () => {
       // Si era una conversación nueva, navegamos al nuevo ID
       if (!id) {
         navigate(`/chatbot/${data.conversacion_id}`);
-      } else {
-        cargarConversaciones();
       }
     } catch (error) {
       console.error('Error chat:', error);
@@ -94,13 +77,6 @@ export const ChatbotPage = () => {
     } finally {
       setIsTyping(false);
     }
-  };
-
-  const getCoincidenciasCount = () => {
-    if (!searchChatQuery.trim()) return 0;
-    return mensajes.filter(m =>
-      m.contenido.toLowerCase().includes(searchChatQuery.toLowerCase())
-    ).length;
   };
 
   const handleScrollToMessage = (index: number) => {
@@ -147,9 +123,6 @@ export const ChatbotPage = () => {
           <ChatContainer
             mensajes={mensajes}
             isTyping={isTyping}
-            accentColor={accentColor}
-            onSelectSuggestion={(s) => handleSend(s)}
-            searchTerm={searchChatQuery}
           />
         </div>
 
@@ -212,7 +185,7 @@ export const ChatbotPage = () => {
                     <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 transition-all duration-200 ${isSelected
                       ? 'bg-[var(--color-accent)] scale-110 shadow-sm'
                       : 'bg-slate-300 dark:bg-slate-700 group-hover:bg-slate-400 dark:group-hover:bg-slate-500'
-                      }`} />
+                    }`} />
                   </button>
                 );
               })}

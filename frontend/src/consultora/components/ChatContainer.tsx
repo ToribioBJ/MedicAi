@@ -6,12 +6,9 @@ import logoMedicAI from '../../img/logo-medica.png';
 interface Props {
   mensajes: Mensaje[];
   isTyping: boolean;
-  accentColor: string;
-  onSelectSuggestion: (sug: string) => void;
-  searchTerm?: string;
 }
 
-export const ChatContainer = ({ mensajes, isTyping, accentColor, onSelectSuggestion, searchTerm }: Props) => {
+export const ChatContainer = ({ mensajes, isTyping }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,9 +44,6 @@ export const ChatContainer = ({ mensajes, isTyping, accentColor, onSelectSuggest
           <ChatMessage
             role={m.role}
             content={m.contenido}
-            timestamp={m.fecha_envio}
-            isLast={i === mensajes.length - 1}
-            searchTerm={searchTerm}
           />
         </div>
       ))}
