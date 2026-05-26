@@ -226,115 +226,7 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Panel de Conectividad y Salud */}
-      <div className={`p-6 rounded-3xl border shadow-sm transition-all duration-300 ${isDark ? 'bg-gradient-to-r from-[#0E1320]/60 to-[#0A0D16]/60 border-white/10' : 'bg-gradient-to-r from-white to-slate-50 border-slate-100'}`}>
-        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 dark:border-white/5">
-          <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Activity size={16} className="text-[var(--color-accent)] animate-pulse" /> Estado de Conectividad del Sistema
-          </h3>
-          <button 
-            onClick={fetchHealthStatus}
-            disabled={healthLoading}
-            className="text-xs font-bold text-[var(--color-accent)] hover:brightness-110 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RotateCw size={12} className={healthLoading ? 'animate-spin' : ''} /> Probar Conexión
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Base de Datos status */}
-          <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:shadow-md ${
-            isDark ? 'bg-[#0E1320]/80 border-white/5' : 'bg-white border-slate-100'
-          }`}>
-            <div className="flex justify-between items-start">
-              <div className="flex gap-3">
-                <div className={`p-2.5 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                  <Database size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200">Base de Datos (MySQL)</h4>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                    {healthStatus?.database.details || "Verificando conexión..."}
-                  </p>
-                </div>
-              </div>
-              {healthStatus ? (
-                healthStatus.database.status === 'connected' ? (
-                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  </span>
-                ) : (
-                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-                  </span>
-                )
-              ) : (
-                <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                  <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
-                </span>
-              )}
-            </div>
-            {healthStatus && healthStatus.database.status === 'connected' && (
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
-                <span className="text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md">Online</span>
-                <span className="text-slate-400">Latencia: <strong className={getLatencyColor(healthStatus.database.latency_ms)}>{healthStatus.database.latency_ms} ms</strong></span>
-              </div>
-            )}
-            {healthStatus && healthStatus.database.status === 'error' && (
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
-                <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
-              </div>
-            )}
-          </div>
 
-          {/* Inteligencia Artificial status */}
-          <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:shadow-md ${
-            isDark ? 'bg-[#0E1320]/80 border-white/5' : 'bg-white border-slate-100'
-          }`}>
-            <div className="flex justify-between items-start">
-              <div className="flex gap-3">
-                <div className={`p-2.5 rounded-xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                  <Cpu size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200">Servicio de IA (Groq API)</h4>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                    {healthStatus?.groq.details || "Verificando conexión..."}
-                  </p>
-                </div>
-              </div>
-              {healthStatus ? (
-                healthStatus.groq.status === 'connected' ? (
-                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-                  </span>
-                ) : (
-                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-                  </span>
-                )
-              ) : (
-                <span className="flex h-2.5 w-2.5 relative mt-1.5">
-                  <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
-                </span>
-              )}
-            </div>
-            {healthStatus && healthStatus.groq.status === 'connected' && (
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
-                <span className="text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-md">Online</span>
-                <span className="text-slate-400">Latencia: <strong className={getLatencyColor(healthStatus.groq.latency_ms)}>{healthStatus.groq.latency_ms} ms</strong></span>
-              </div>
-            )}
-            {healthStatus && healthStatus.groq.status === 'error' && (
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
-                <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -619,6 +511,77 @@ export const AdminDashboardPage = () => {
           </div>
         )}
 
+      </div>
+
+      {/* Telemetría y Salud del Sistema */}
+      <div className={`p-4 rounded-3xl border shadow-sm transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold ${
+        isDark 
+          ? 'bg-[#0E1320]/60 border-white/10 text-slate-300' 
+          : 'bg-white border-slate-100 text-slate-600'
+      }`}>
+        <div className="flex items-center gap-2">
+          <Activity size={14} className="text-[var(--color-accent)] animate-pulse" />
+          <span className="font-extrabold uppercase tracking-wider text-slate-400">Telemetría de Red</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 justify-center md:justify-end flex-1">
+          {/* DB Status */}
+          <div className="flex items-center gap-2">
+            <Database size={14} className="text-slate-400" />
+            <span>Base de Datos:</span>
+            {healthStatus ? (
+              healthStatus.database.status === 'connected' ? (
+                <div className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-emerald-500 font-bold">Online</span>
+                  <span className="text-slate-400">({healthStatus.database.latency_ms}ms)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1" title={healthStatus.database.details}>
+                  <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+                  <span className="text-rose-500 font-bold">Error</span>
+                </div>
+              )
+            ) : (
+              <span className="text-slate-400 animate-pulse">Chequeando...</span>
+            )}
+          </div>
+
+          {/* Separator */}
+          <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-white/10"></div>
+
+          {/* Groq IA Status */}
+          <div className="flex items-center gap-2">
+            <Cpu size={14} className="text-slate-400" />
+            <span>Servicio de IA:</span>
+            {healthStatus ? (
+              healthStatus.groq.status === 'connected' ? (
+                <div className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                  <span className="text-indigo-500 font-bold">Online</span>
+                  <span className="text-slate-400">({healthStatus.groq.latency_ms}ms)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1" title={healthStatus.groq.details}>
+                  <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+                  <span className="text-rose-500 font-bold">Error</span>
+                </div>
+              )
+            ) : (
+              <span className="text-slate-400 animate-pulse">Chequeando...</span>
+            )}
+          </div>
+
+          {/* Action button */}
+          <button 
+            onClick={fetchHealthStatus}
+            disabled={healthLoading}
+            className="px-3 py-1 rounded-xl border text-[10px] font-extrabold uppercase tracking-wider text-[var(--color-accent)] border-[var(--color-accent)]/20 hover:bg-[var(--color-accent)]/5 cursor-pointer disabled:opacity-50 flex items-center gap-1 shrink-0 ml-2"
+          >
+            <RotateCw size={10} className={healthLoading ? 'animate-spin' : ''} />
+            Re-test
+          </button>
+        </div>
       </div>
 
       {/* Info panel */}
