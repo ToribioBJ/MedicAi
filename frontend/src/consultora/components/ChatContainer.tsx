@@ -8,9 +8,10 @@ interface Props {
   isTyping: boolean;
   accentColor: string;
   onSelectSuggestion: (sug: string) => void;
+  searchTerm?: string;
 }
 
-export const ChatContainer = ({ mensajes, isTyping, accentColor, onSelectSuggestion }: Props) => {
+export const ChatContainer = ({ mensajes, isTyping, accentColor, onSelectSuggestion, searchTerm }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,13 +43,15 @@ export const ChatContainer = ({ mensajes, isTyping, accentColor, onSelectSuggest
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-12 pt-8 pb-48 space-y-10 max-w-4xl mx-auto w-full bg-transparent">
       {mensajes.map((m, i) => (
-        <ChatMessage
-          key={i}
-          role={m.role}
-          content={m.contenido}
-          timestamp={m.fecha_envio}
-          isLast={i === mensajes.length - 1}
-        />
+        <div id={`msg-${i}`} key={i} className="w-full">
+          <ChatMessage
+            role={m.role}
+            content={m.contenido}
+            timestamp={m.fecha_envio}
+            isLast={i === mensajes.length - 1}
+            searchTerm={searchTerm}
+          />
+        </div>
       ))}
 
       {isTyping && (
