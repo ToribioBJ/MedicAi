@@ -43,6 +43,74 @@ def listar(
     return db.query(Usuario).all()
 
 
+@router.get("/admin-insights")
+def obtener_insights_admin(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_admin_user)
+):
+    """
+    Genera un reporte analítico de la base de datos de usuarios utilizando IA (Groq).
+    """
+    total_users = db.query(Usuario).count()
+    active_users = db.query(Usuario).filter(Usuario.activo == True).count()
+    verified_users = db.query(Usuario).filter(Usuario.email_verified == True).count()
+    admins = db.query(Usuario).filter(Usuario.role == "administrador").count()
+    
+    stats_summary = (
+        f"Resumen de Usuarios en MedicAI:\n"
+        f"- Total registrados: {total_users}\n"
+        f"- Cuentas activas: {active_users}\n"
+        f"- Cuentas inactivas o bloqueadas: {total_users - active_users}\n"
+        f"- Correo verificado: {verified_users}\n"
+        f"- Correo pendiente: {total_users - verified_users}\n"
+        f"- Administradores: {admins}\n"
+        f"- Pacientes/Usuarios normales: {total_users - admins}\n"
+    )
+    
+    sys_prompt = (
+        "Eres un analista de sistemas e inteligencia de seguridad de MedicAI.\n"
+        "Debes analizar las estadísticas proporcionadas de la base de datos de usuarios y generar un reporte ejecutivo en español "
+        "en formato Markdown limpio y sumamente profesional.\n\n"
+        "El reporte debe estructurarse obligatoriamente con las siguientes secciones:\n"
+        "1. ## Análisis de Salud del Sistema: Evaluación sobre la relación entre usuarios activos e inactivos.\n"
+        "2. ## Estado de Verificación de Cuentas: Comentario analítico sobre la verificación por correo y posibles riesgos de spam.\n"
+        "3. ## Distribución de Roles e Impacto en Seguridad: Comentar si la cantidad de administradores es segura y adecuada.\n"
+        "4. ## Recomendaciones Clave: Lista de acciones preventivas o correctivas recomendadas.\n\n"
+        "Mantén un tono profesional, claro y de alto nivel técnico."
+    )
+    
+    try:
+        from app.services.ai_service import client, MODEL
+        if not client:
+            return {"insights": "El servicio de IA de Groq no se encuentra configurado en este momento."}
+            
+        messages = [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": f"Por favor genera el reporte basándote en las siguientes métricas del sistema:\n{stats_summary}"}
+        ]
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=1000
+        )
+        report = response.choices[0].message.content
+        return {
+            "insights": report,
+            "metrics": {
+                "total": total_users,
+                "activo": active_users,
+                "verificado": verified_users,
+                "administrador": admins
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al generar insights con IA: {str(e)}"
+        )
+
+
 @router.get("/{usuario_id}", response_model=UsuarioOut)
 def obtener(usuario_id: int, db: Session = Depends(get_db)):
     u = db.query(Usuario).filter(Usuario.id == usuario_id).first()
