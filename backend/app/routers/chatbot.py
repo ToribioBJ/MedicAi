@@ -15,7 +15,7 @@ chat_service = ChatService()
 
 @router.post("/mensaje", response_model=ChatResponse)
 def enviar_mensaje(req: ChatRequest, db: Session = Depends(get_db)):
-    # 1. Asegurar o crear conversación
+
     if req.conversacion_id:
         conv = db.query(Conversacion).filter(Conversacion.id == req.conversacion_id).first()
         if not conv:
@@ -28,12 +28,12 @@ def enviar_mensaje(req: ChatRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(conv)
 
-    # 2. Si hay usuario_id en la conversación o en el request, actualizarlo
+
     if req.usuario_id and not conv.usuario_id:
         conv.usuario_id = req.usuario_id
         db.commit()
 
-    # 3. Obtener historial previo para la IA
+
     mensajes_previos = (
         db.query(MensajeChat)
         .filter(MensajeChat.conversacion_id == conv.id)
@@ -42,10 +42,10 @@ def enviar_mensaje(req: ChatRequest, db: Session = Depends(get_db)):
     )
     historial_ia = [{"role": m.role, "content": m.contenido} for m in mensajes_previos]
 
-    # 4. Generar respuesta con IA, pasándole DB y usr_id para que pueda usar Tools (Calendario)
+
     respuesta_ia = chat_service.responder(req.mensaje, historial_ia, db=db, usuario_id=conv.usuario_id)
 
-    # 5. Guardar mensaje del usuario y del asistente
+
     msg_user = MensajeChat(conversacion_id=conv.id, role="user", contenido=req.mensaje)
     msg_bot = MensajeChat(conversacion_id=conv.id, role="assistant", contenido=respuesta_ia)
     

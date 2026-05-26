@@ -54,16 +54,16 @@ export const LoginPage = () => {
   return (
     <div className="relative min-h-screen w-full flex overflow-hidden font-sans bg-[#F4F7FB]">
 
-      {/* Premium Background Mesh Gradient */}
+
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-br from-blue-100/40 to-cyan-100/40 blur-[120px] mix-blend-multiply opacity-70 animate-float" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-tr from-indigo-100/40 to-blue-200/40 blur-[130px] mix-blend-multiply opacity-70 animate-float" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Grid Sutíl de fondo */}
+
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px]"></div>
 
-      {/* Contenedor Izquierdo (Presentación y Logo) */}
+
       <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 lg:p-24 border-r border-white/50">
 
         <div className="relative flex flex-col items-center max-w-lg text-center backdrop-blur-sm bg-white/30 p-12 rounded-[3rem] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -86,7 +86,7 @@ export const LoginPage = () => {
         </div>
       </div>
 
-      {/* Contenedor Derecho (El Formulario y Login) */}
+
       <div className="w-full lg:w-1/2 relative z-20 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-24">
 
         <div className="w-full max-w-[440px]">
@@ -168,7 +168,6 @@ export const LoginPage = () => {
             </button>
           </form>
 
-          {/* Separador elegante */}
           <div className="mt-10 flex items-center gap-4">
             <div className="h-[2px] flex-1 bg-slate-100"></div>
             <span className="text-slate-400 text-xs font-bold tracking-widest uppercase">O continúa con</span>

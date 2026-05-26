@@ -50,6 +50,9 @@ class ChatService:
         return (
             "Eres MedicAI, un asistente de salud informativo e inteligente.\n"
             f"El DÍA y HORA EXACTA actual es: {hoy.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
+            "REGLA ESTRICTA: Solo debes responder preguntas relacionadas con la salud, la medicina, síntomas y bienestar. "
+            "Si el usuario te hace una pregunta o comentario sobre cualquier otro tema que NO sea de salud (por ejemplo, programación, deportes, política, recetas de cocina, etc.), "
+            "debes negarte amablemente diciendo: 'Lo siento, mi función como MedicAI es exclusivamente responder preguntas relacionadas con temas de salud y medicina. Por favor, formúlame una consulta médica.'\n\n"
             "Tienes la capacidad de acceder al calendario del usuario. Si un usuario te pide explícitamente AGENDAR, REGISTRAR o RECORDAR algo en su calendario, "
             "usa obligatoriamente y exclusivamente tu herramienta 'agendar_cita' para guardarlo internamente usando su fecha correcta.\n\n"
             "Responde de forma clara y amable tras haber agendado la cita, confirmando que ya se registró en el calendario exitosamente."
@@ -60,10 +63,10 @@ class ChatService:
             return "Lo siento, el servicio de IA no está configurado correctamente en este momento."
 
         try:
-            # Preparamos los mensajes para el LLM
+
             messages = [{"role": "system", "content": self._get_system_prompt()}]
             
-            # Limpiamos los mensajes del historial incompatibles con Groq (borramos los "tool" calls en crudo por si llegan)
+
             for m in historial:
                 messages.append({"role": m["role"], "content": m["content"]})
 
@@ -80,7 +83,7 @@ class ChatService:
 
             asst_message = response.choices[0].message
 
-            # Verificar si Groq decidió usar Function Calling
+
             if asst_message.tool_calls:
                 for tool_call in asst_message.tool_calls:
                     if tool_call.function.name == "agendar_cita":
@@ -116,7 +119,7 @@ class ChatService:
                             "content": tool_result
                         })
 
-                # Segunda llamada para generar la confirmación de texto final
+
                 second_response = client.chat.completions.create(
                     model=MODEL,
                     messages=messages,
