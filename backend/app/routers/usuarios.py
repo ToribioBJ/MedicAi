@@ -104,11 +104,63 @@ def obtener_insights_admin(
                 "administrador": admins
             }
         }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al generar insights con IA: {str(e)}"
         )
+
+
+@router.get("/health-status")
+def obtener_estado_salud(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_admin_user)
+):
+    """
+    Verifica la conectividad en tiempo real con la base de datos (MySQL) y el servicio de IA (Groq).
+    """
+    import time
+    
+    health = {
+        "database": {
+            "status": "disconnected",
+            "details": "",
+            "latency_ms": 0
+        },
+        "groq": {
+            "status": "disconnected",
+            "details": "",
+            "latency_ms": 0
+        }
+    }
+    
+    # 1. Probar base de datos MySQL
+    try:
+        start_time = time.time()
+        db.execute(text("SELECT 1"))
+        latency = int((time.time() - start_time) * 1000)
+        health["database"]["status"] = "connected"
+        health["database"]["details"] = "Conexión a base de datos MySQL activa."
+        health["database"]["latency_ms"] = latency
+    except Exception as e:
+        health["database"]["status"] = "error"
+        health["database"]["details"] = f"Falla al conectar con MySQL: {str(e)}"
+
+    # 2. Probar API de Groq
+    try:
+        from app.services.ai_service import client, MODEL, VISION_MODEL
+        if not client:
+            health["groq"]["status"] = "disconnected"
+            health["groq"]["details"] = "Clave CHATBOT_API_KEY no encontrada en variables de entorno."
+        else:
+            start_time = time.time()
+            # Intento de listar modelos como test de conectividad y validez de la API key
+            client.models.list()
+            latency = int((time.time() - start_time) * 1000)
+            health["groq"]["status"] = "connected"
+            health["groq"]["details"] = f"API de Groq activa. Modelos: Text={MODEL} | Vision={VISION_MODEL}."
+            health["groq"]["latency_ms"] = latency
+    except Exception as e:
+        health["groq"]["status"] = "error"
+        health["groq"]["details"] = f"Error en la API de Groq: {str(e)}"
+        
+    return health
 
 
 @router.get("/{usuario_id}", response_model=UsuarioOut)

@@ -34,6 +34,32 @@ export const AdminDashboardPage = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
+  // Health Status
+  const [healthStatus, setHealthStatus] = useState<{
+    database: { status: 'connected' | 'disconnected' | 'error'; details: string; latency_ms: number };
+    groq: { status: 'connected' | 'disconnected' | 'error'; details: string; latency_ms: number };
+  } | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+
+  const fetchHealthStatus = async () => {
+    setHealthLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/usuarios/health-status', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHealthStatus(data);
+      }
+    } catch (err) {
+      console.error("Error fetching health status:", err);
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
   const fetchAiInsights = async () => {
     setAiLoading(true);
     setErrorMsg('');
@@ -118,6 +144,7 @@ export const AdminDashboardPage = () => {
 
   useEffect(() => {
     fetchUsuarios();
+    fetchHealthStatus();
   }, []);
 
   const handleToggleEstado = async (userId: number, currentActivo: boolean) => {
@@ -214,14 +241,17 @@ export const AdminDashboardPage = () => {
           Analizar con IA (Groq)
         </button>
         <button
-          onClick={fetchUsuarios}
-          disabled={loading}
+          onClick={() => {
+            fetchUsuarios();
+            fetchHealthStatus();
+          }}
+          disabled={loading || healthLoading}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 ${isDark
             ? 'bg-white/5 border-white/10 text-slate-200 hover:border-[var(--color-accent)] hover:text-white'
             : 'bg-white border-slate-200 text-slate-700 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
             }`}
         >
-          <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
+          <RotateCw size={16} className={loading || healthLoading ? 'animate-spin' : ''} />
           Actualizar Lista
         </button>
       </div>
@@ -246,6 +276,106 @@ export const AdminDashboardPage = () => {
           <p className="text-sm font-semibold">{errorMsg}</p>
         </div>
       )}
+
+      {/* Panel de Conectividad y Salud */}
+      <div className={`p-6 rounded-3xl border shadow-sm transition-colors duration-300 ${isDark ? 'bg-[#0E1320]/40 border-white/10' : 'bg-white border-slate-100'}`}>
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-white/5">
+          <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Settings2 size={14} /> Estado de Conectividad del Sistema
+          </h3>
+          <button 
+            onClick={fetchHealthStatus}
+            disabled={healthLoading}
+            className="text-xs font-bold text-[var(--color-accent)] hover:brightness-110 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+          >
+            <RotateCw size={12} className={healthLoading ? 'animate-spin' : ''} /> Probar Conexión
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Base de Datos status */}
+          <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
+            isDark ? 'bg-[#0B0F19]/40 border-white/5' : 'bg-slate-50/50 border-slate-200/50'
+          }`}>
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-bold text-sm text-slate-500 dark:text-slate-400">Base de Datos (MySQL)</h4>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                  {healthStatus?.database.details || "Verificando conexión..."}
+                </p>
+              </div>
+              {healthStatus ? (
+                healthStatus.database.status === 'connected' ? (
+                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                ) : (
+                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                  </span>
+                )
+              ) : (
+                <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
+                </span>
+              )}
+            </div>
+            {healthStatus && healthStatus.database.status === 'connected' && (
+              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+                <span className="text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md">Online</span>
+                <span className="text-slate-400">Latencia: <strong className="text-slate-700 dark:text-slate-200">{healthStatus.database.latency_ms} ms</strong></span>
+              </div>
+            )}
+            {healthStatus && healthStatus.database.status === 'error' && (
+              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+                <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
+              </div>
+            )}
+          </div>
+
+          {/* Inteligencia Artificial status */}
+          <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
+            isDark ? 'bg-[#0B0F19]/40 border-white/5' : 'bg-slate-50/50 border-slate-200/50'
+          }`}>
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-bold text-sm text-slate-500 dark:text-slate-400">Servicio de IA (Groq API)</h4>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                  {healthStatus?.groq.details || "Verificando conexión..."}
+                </p>
+              </div>
+              {healthStatus ? (
+                healthStatus.groq.status === 'connected' ? (
+                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                  </span>
+                ) : (
+                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                  </span>
+                )
+              ) : (
+                <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
+                </span>
+              )}
+            </div>
+            {healthStatus && healthStatus.groq.status === 'connected' && (
+              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+                <span className="text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-md">Online</span>
+                <span className="text-slate-400">Latencia: <strong className="text-slate-700 dark:text-slate-200">{healthStatus.groq.latency_ms} ms</strong></span>
+              </div>
+            )}
+            {healthStatus && healthStatus.groq.status === 'error' && (
+              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+                <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
