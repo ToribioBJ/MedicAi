@@ -40,10 +40,15 @@ export const LoginPage = () => {
       login(data.access_token, {
         id: data.user_id,
         nombre: data.nombre,
-        email: email
+        email: data.email || email,
+        role: data.role
       });
 
-      navigate('/');
+      if (data.role === 'administrador') {
+        navigate('/admin');
+      } else {
+        navigate('/chatbot');
+      }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');
     } finally {
@@ -127,7 +132,7 @@ export const LoginPage = () => {
               <div>
                 <div className="flex justify-between items-center mb-2 mx-1">
                   <label className="block text-sm font-bold text-slate-700">Contraseña</label>
-                  <Link to="#" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition">
+                  <Link to="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition">
                     ¿Olvidaste tu contraseña?
                   </Link>
                 </div>

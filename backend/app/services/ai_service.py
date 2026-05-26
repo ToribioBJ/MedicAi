@@ -94,7 +94,9 @@ class ChatService:
                             
                             # Insertar en BD
                             try:
-                                dt = datetime.fromisoformat(fecha_str)
+                                # Limpiar sufijo Z (UTC) en fecha_str para compatibilidad en Python < 3.11
+                                clean_fecha = fecha_str.replace("Z", "+00:00") if isinstance(fecha_str, str) else fecha_str
+                                dt = datetime.fromisoformat(clean_fecha)
                                 c = Cita(usuario_id=usuario_id, fecha_hora=dt, motivo=motivo, estado="confirmada")
                                 db.add(c)
                                 db.commit()
@@ -105,13 +107,8 @@ class ChatService:
                         else:
                             tool_result = "Error interno: Faltan credenciales de BD."
 
-                        # Añadir la respuesta al flujo conversacional para el segundo loop
-                        message_dump = asst_message.model_dump()
-                        # Clean groq unsupported attributes for history
-                        messages.append({
-                            "role": "assistant",
-                            "tool_calls": message_dump["tool_calls"]
-                        })
+                        # Añadir la respuesta al flujo conversacional para el segundo loop de forma compatible
+                        messages.append(asst_message)
                         messages.append({
                             "tool_call_id": tool_call.id,
                             "role": "tool",
