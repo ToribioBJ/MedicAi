@@ -67,6 +67,7 @@ CREATE TABLE mensajes_chat (
     conversacion_id INT NOT NULL,
     role            ENUM('user','assistant') NOT NULL,
     contenido       TEXT NOT NULL,
+    imagen          LONGTEXT NULL,
     fecha_envio     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_mensajes_conversacion (conversacion_id),
     CONSTRAINT fk_mensajes_conversacion

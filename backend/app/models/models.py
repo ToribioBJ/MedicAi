@@ -67,6 +67,7 @@ class MensajeChat(Base):
     conversacion_id = Column(Integer, ForeignKey("conversaciones.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(Enum("user", "assistant"), nullable=False)
     contenido = Column(Text, nullable=False)
+    imagen = Column(Text, nullable=True)
     fecha_envio = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     conversacion = relationship("Conversacion", back_populates="mensajes")

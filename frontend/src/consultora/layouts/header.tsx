@@ -6,6 +6,8 @@ const meta: Record<string, { title: string; subtitle: string }> = {
   '/chatbot': { title: 'Asistente Médico', subtitle: 'Consultas inteligentes y triaje con IA' },
   '/calendario': { title: 'Calendario', subtitle: 'Agenda de citas médicas' },
   '/nosotros': { title: 'Sobre MedicAI', subtitle: 'Conoce a tu asistente de salud' },
+  '/configuracion': { title: 'Configuración', subtitle: 'Personaliza la apariencia y el rendimiento de MedicAI' },
+  '/admin': { title: 'Panel de Administración', subtitle: 'Gestiona cuentas de usuarios, accesos y privilegios' },
 };
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {

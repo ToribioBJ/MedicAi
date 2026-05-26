@@ -129,21 +129,17 @@ export const AdminDashboardPage = () => {
   return (
     <div className={`p-6 sm:p-10 max-w-7xl mx-auto space-y-8 font-sans transition-colors duration-300 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className={`text-3xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Panel de Administración</h1>
-          <p className={`font-medium mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Gestiona las cuentas de usuarios, activa/desactiva accesos y define privilegios en MedicAI.</p>
-        </div>
+      {/* Action Header Row */}
+      <div className="flex justify-end items-center gap-4">
         <button
           onClick={fetchUsuarios}
           disabled={loading}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 ${isDark
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 ${isDark
             ? 'bg-white/5 border-white/10 text-slate-200 hover:border-[var(--color-accent)] hover:text-white'
             : 'bg-white border-slate-200 text-slate-700 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
             }`}
         >
-          <RotateCw size={18} className={loading ? 'animate-spin' : ''} />
+          <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
           Actualizar Lista
         </button>
       </div>

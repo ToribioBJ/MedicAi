@@ -5,6 +5,7 @@ export interface Mensaje {
   contenido: string;
   id?: number;
   fecha_envio?: string;
+  imagen?: string;
 }
 
 export interface Conversacion {
@@ -20,8 +21,13 @@ export interface ChatResponse {
   usuario_id?: number;
 }
 
-export const enviarMensajeChat = (mensaje: string, conversacionId?: number, usuarioId?: number) =>
-  api.post<ChatResponse>('/chatbot/mensaje', { mensaje, conversacion_id: conversacionId, usuario_id: usuarioId });
+export const enviarMensajeChat = (mensaje: string, conversacionId?: number, usuarioId?: number, imagen?: string) =>
+  api.post<ChatResponse>('/chatbot/mensaje', { 
+    mensaje, 
+    conversacion_id: conversacionId, 
+    usuario_id: usuarioId,
+    imagen 
+  });
 
 export const listarConversaciones = (usuarioId?: number) =>
   api.get<Conversacion[]>('/chatbot/conversaciones', { params: { usuario_id: usuarioId } });

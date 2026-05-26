@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 class MensajeBase(BaseModel):
     role: Literal["user", "assistant"]
     contenido: str
+    imagen: Optional[str] = None
 
 class MensajeCreate(MensajeBase):
     pass
@@ -33,6 +34,7 @@ class ChatRequest(BaseModel):
     mensaje: str
     usuario_id: Optional[int] = None
     conversacion_id: Optional[int] = None
+    imagen: Optional[str] = None
 
 class ChatResponse(BaseModel):
     respuesta: str

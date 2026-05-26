@@ -58,6 +58,18 @@ try:
 except Exception as migration_err:
     print(f">>> Advertencia en la migración de columnas: {migration_err}")
 
+# Migración automática de columnas para la tabla mensajes_chat
+try:
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE mensajes_chat ADD COLUMN imagen LONGTEXT NULL"))
+            conn.commit()
+            print(">>> Columna 'imagen' agregada con éxito en la migración de mensajes_chat")
+        except Exception:
+            pass
+except Exception as migration_err:
+    print(f">>> Advertencia en la migración de mensajes_chat: {migration_err}")
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

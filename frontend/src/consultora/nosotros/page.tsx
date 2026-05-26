@@ -51,14 +51,6 @@ export const NosotrosPage = () => {
   return (
     <div className={`flex-1 p-8 md:p-12 animate-in fade-in duration-700 ${isDark ? 'text-white' : 'text-slate-800'}`}>
       <div className="max-w-6xl mx-auto">
-        <header className="mb-16">
-          <h1 className="text-5xl font-bold tracking-tight mb-4">
-            Sobre <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">MedicAI</span>
-          </h1>
-          <p className={`text-xl font-medium ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-            Tu asistente de salud impulsado por IA
-          </p>
-        </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {cards.map((card, idx) => (

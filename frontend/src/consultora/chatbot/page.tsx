@@ -39,12 +39,12 @@ export const ChatbotPage = () => {
     }
   }, [id, navigate]);
 
-  const handleSend = async (textOverride?: string) => {
+  const handleSend = async (textOverride?: string, imagen?: string) => {
     const textToSend = textOverride || input;
-    if (!textToSend.trim() || isTyping) return;
+    if ((!textToSend.trim() && !imagen) || isTyping) return;
 
     // UI Optimista: Añadir mensaje del usuario inmediatamente
-    const userMsg: Mensaje = { role: 'user', contenido: textToSend };
+    const userMsg: Mensaje = { role: 'user', contenido: textToSend, imagen };
     setMensajes(prev => [...prev, userMsg]);
 
     setInput('');
@@ -52,7 +52,7 @@ export const ChatbotPage = () => {
 
     try {
       const convId = id ? Number(id) : undefined;
-      const { data } = await enviarMensajeChat(textToSend, convId, user?.id);
+      const { data } = await enviarMensajeChat(textToSend, convId, user?.id, imagen);
 
       const botMsg: Mensaje = { role: 'assistant', contenido: data.respuesta };
       setMensajes(prev => [...prev, botMsg]);
@@ -119,7 +119,7 @@ export const ChatbotPage = () => {
         </div>
 
         {/* Contenedor de Mensajes */}
-        <div className="flex-grow overflow-hidden relative">
+        <div className="flex-grow flex flex-col overflow-hidden relative">
           <ChatContainer
             mensajes={mensajes}
             isTyping={isTyping}
@@ -131,7 +131,7 @@ export const ChatbotPage = () => {
           <ChatInput
             input={input}
             setInput={setInput}
-            onSend={(textOverride) => handleSend(textOverride)}
+            onSend={(textOverride, img) => handleSend(textOverride, img)}
             isTyping={isTyping}
             hasMessages={mensajes.length > 0}
             lastBotMessage={mensajes.filter(m => m.role === 'assistant').pop()?.contenido}

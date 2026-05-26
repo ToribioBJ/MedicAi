@@ -16,3 +16,6 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_password_token_expiration DA
 UPDATE usuarios 
 SET role = 'administrador', email_verified = 1 
 WHERE email = 'admin@medicai.com';
+
+-- 3. Agregar columna de imagen a la tabla de mensajes_chat
+ALTER TABLE mensajes_chat ADD COLUMN IF NOT EXISTS imagen LONGTEXT NULL;

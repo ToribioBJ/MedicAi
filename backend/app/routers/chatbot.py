@@ -43,10 +43,10 @@ def enviar_mensaje(req: ChatRequest, db: Session = Depends(get_db)):
     historial_ia = [{"role": m.role, "content": m.contenido} for m in mensajes_previos]
 
 
-    respuesta_ia = chat_service.responder(req.mensaje, historial_ia, db=db, usuario_id=conv.usuario_id)
+    respuesta_ia = chat_service.responder(req.mensaje, historial_ia, db=db, usuario_id=conv.usuario_id, imagen=req.imagen)
 
 
-    msg_user = MensajeChat(conversacion_id=conv.id, role="user", contenido=req.mensaje)
+    msg_user = MensajeChat(conversacion_id=conv.id, role="user", contenido=req.mensaje, imagen=req.imagen)
     msg_bot = MensajeChat(conversacion_id=conv.id, role="assistant", contenido=respuesta_ia)
     
     db.add(msg_user)

@@ -38,12 +38,13 @@ export const ChatContainer = ({ mensajes, isTyping }: Props) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-12 pt-8 pb-48 space-y-10 max-w-4xl mx-auto w-full bg-transparent">
+    <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] px-4 sm:px-6 md:px-12 pt-8 pb-48 space-y-10 max-w-4xl mx-auto w-full bg-transparent">
       {mensajes.map((m, i) => (
         <div id={`msg-${i}`} key={i} className="w-full">
           <ChatMessage
             role={m.role}
             content={m.contenido}
+            imagen={m.imagen}
           />
         </div>
       ))}
