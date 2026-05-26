@@ -15,6 +15,13 @@ class Usuario(Base):
     nombre = Column(String(150), nullable=False)
 
     activo = Column(Boolean, default=True, nullable=False)
+    role = Column(String(50), default="usuario", nullable=False)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(255), nullable=True)
+    verification_token_expiration = Column(DateTime, nullable=True)
+    reset_password_token = Column(String(255), nullable=True)
+    reset_password_token_expiration = Column(DateTime, nullable=True)
+
     fecha_registro = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

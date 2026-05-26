@@ -18,6 +18,55 @@ logger = logging.getLogger("medicai")
 try:
     Base.metadata.create_all(bind=engine)
     logger.info(">>> Tablas verificadas/creadas en MySQL.")
+    
+    # Crear usuario semilla si la base de datos está vacía
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        from app.models.models import Usuario, Cita
+        if db.query(Usuario).count() == 0:
+            logger.info(">>> Base de datos vacía. Creando usuario administrador semilla...")
+            admin = Usuario(
+                email="admin@medicai.com",
+                password_hash="$2b$12$KIXoL6Jg3fEYI3p9wqZfUuqQ3vH0Jt5L8bN0aXqZzQYjR4q5a0p6S", # password: admin (o similar)
+                nombre="Administrador MedicAI"
+            )
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+            
+            # Citas semilla
+            from datetime import datetime, timedelta
+            cita1 = Cita(
+                usuario_id=admin.id,
+                fecha_hora=datetime.utcnow() + timedelta(days=1, hours=2),
+                motivo="Chequeo General Mensual",
+                estado="confirmada"
+            )
+            cita2 = Cita(
+                usuario_id=admin.id,
+                fecha_hora=datetime.utcnow() + timedelta(days=4, hours=3),
+                motivo="Seguimiento de consulta",
+                estado="pendiente"
+            )
+            db.add(cita1)
+            db.add(cita2)
+            db.commit()
+            logger.info(">>> Datos semilla inicializados con éxito.")
+            
+        # Asegurar que el usuario administrador semilla esté siempre verificado y con rol administrador
+        admin_existente = db.query(Usuario).filter(Usuario.email == "admin@medicai.com").first()
+        if admin_existente:
+            if admin_existente.role != "administrador" or not admin_existente.email_verified:
+                admin_existente.role = "administrador"
+                admin_existente.email_verified = True
+                db.commit()
+                logger.info(">>> Rol y estado de verificación del administrador semilla actualizados en base de datos.")
+    except Exception as seed_err:
+        logger.error(f">>> Error al inicializar/verificar datos semilla: {seed_err}")
+        db.rollback()
+    finally:
+        db.close()
 except Exception as e:
     logger.error(f">>> Error inicializando DB: {e}")
 

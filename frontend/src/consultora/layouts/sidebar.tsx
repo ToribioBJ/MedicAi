@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   MessageSquare, CalendarDays, Settings, 
-  Plus, History, Trash2, User2, ChevronRight, LogOut
+  Plus, History, Trash2, User2, ChevronRight, LogOut, ShieldCheck
 } from 'lucide-react';
 import logoMedicAI from '../../img/logo-medica.png';
 import { useTheme } from '../../context/ThemeContext';
@@ -18,10 +18,7 @@ type NavItem = {
   icon: React.ComponentType<{ size?: number }>;
 };
 
-const navigation: NavItem[] = [
-  { to: '/chatbot',   label: 'Asistente Médico', icon: MessageSquare },
-  { to: '/calendario', label: 'Calendario',      icon: CalendarDays },
-];
+// Lista base de navegación estática
 
 export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean, closeMobile?: () => void }) => {
   const { isDark, accentColor } = useTheme();
@@ -146,15 +143,25 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
 
       {/* Main Nav */}
       <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-        {navigation.map((item) => (
-          <NavButton 
-            key={item.to} 
-            to={item.to} 
-            label={item.label} 
-            icon={item.icon} 
-            isActive={pathname === item.to || (item.to === '/chatbot' && isChatView)} 
-          />
-        ))}
+        {/* Main Nav Dinámico */}
+        {(() => {
+          const menuItems: NavItem[] = [
+            { to: '/chatbot',   label: 'Asistente Médico', icon: MessageSquare },
+            { to: '/calendario', label: 'Calendario',      icon: CalendarDays },
+          ];
+          if (user?.role === 'administrador') {
+            menuItems.push({ to: '/admin', label: 'Administración', icon: ShieldCheck });
+          }
+          return menuItems.map((item) => (
+            <NavButton 
+              key={item.to} 
+              to={item.to} 
+              label={item.label} 
+              icon={item.icon} 
+              isActive={pathname === item.to || (item.to === '/chatbot' && isChatView)} 
+            />
+          ));
+        })()}
 
         {/* History Section */}
         <div className={`pt-8 transition-all duration-500 px-6 ${

@@ -21,6 +21,8 @@ class UsuarioUpdate(BaseModel):
 class UsuarioOut(UsuarioBase):
     id: int
     activo: bool
+    role: str
+    email_verified: bool
     fecha_registro: datetime
 
     model_config = ConfigDict(from_attributes=True)
