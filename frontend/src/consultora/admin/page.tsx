@@ -3,8 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import {
   Users, UserCheck, ShieldAlert, UserX, Search,
-  RotateCw, ShieldCheck, Mail, Calendar, Settings2, Loader2, AlertCircle, CheckCircle2,
-  Sparkles, X
+  RotateCw, ShieldCheck, Mail, Calendar, Settings2, Loader2, AlertCircle, CheckCircle2
 } from 'lucide-react';
 
 interface Usuario {
@@ -28,11 +27,6 @@ export const AdminDashboardPage = () => {
   // Alertas
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
-  // AI Insights
-  const [aiInsights, setAiInsights] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Health Status
   const [healthStatus, setHealthStatus] = useState<{
@@ -58,67 +52,6 @@ export const AdminDashboardPage = () => {
     } finally {
       setHealthLoading(false);
     }
-  };
-
-  const fetchAiInsights = async () => {
-    setAiLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-    try {
-      const response = await fetch('http://localhost:8000/api/usuarios/admin-insights', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error('No se pudieron obtener insights de IA. Verifica tu conexión.');
-      }
-      const data = await response.json();
-      setAiInsights(data.insights);
-      setIsAiModalOpen(true);
-      setSuccessMsg('Reporte analítico de IA generado con éxito.');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al conectar con el servicio de IA');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const renderMarkdown = (text: string) => {
-    return text.split('\n').map((line, idx) => {
-      if (line.startsWith('## ')) {
-        return (
-          <h3 key={idx} className="text-base font-extrabold mt-6 mb-3 text-[var(--color-accent)] flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
-            {line.replace('## ', '')}
-          </h3>
-        );
-      }
-      if (line.startsWith('- ')) {
-        return (
-          <li key={idx} className="ml-4 list-disc text-sm text-slate-600 dark:text-slate-300 mb-1.5 leading-relaxed">
-            {line.replace('- ', '')}
-          </li>
-        );
-      }
-      if (line.trim() === '') {
-        return <div key={idx} className="h-1.5" />;
-      }
-      
-      const parts = line.split('**');
-      if (parts.length > 1) {
-        return (
-          <p key={idx} className="text-sm leading-relaxed mb-2 text-slate-600 dark:text-slate-300">
-            {parts.map((part, pIdx) => (pIdx % 2 === 1 ? <strong key={pIdx} className="text-slate-950 dark:text-white font-extrabold">{part}</strong> : part))}
-          </p>
-        );
-      }
-      
-      return (
-        <p key={idx} className="text-sm leading-relaxed mb-2 text-slate-600 dark:text-slate-300">
-          {line}
-        </p>
-      );
-    });
   };
 
   const fetchUsuarios = async () => {
@@ -225,21 +158,6 @@ export const AdminDashboardPage = () => {
 
       {/* Action Header Row */}
       <div className="flex justify-end items-center gap-4">
-        <button
-          onClick={fetchAiInsights}
-          disabled={loading || aiLoading}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 ${isDark
-            ? 'bg-indigo-950/20 border-indigo-900/50 text-indigo-400 hover:border-[var(--color-accent)] hover:text-white'
-            : 'bg-indigo-50 border-indigo-100 text-indigo-700 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
-            }`}
-        >
-          {aiLoading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Sparkles size={16} />
-          )}
-          Analizar con IA (Groq)
-        </button>
         <button
           onClick={() => {
             fetchUsuarios();
@@ -636,48 +554,7 @@ export const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Modal de IA Insights */}
-      {isAiModalOpen && aiInsights && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className={`w-full max-w-2xl max-h-[85vh] rounded-[2rem] border shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ${
-            isDark ? 'bg-[#0E1320] border-white/10 text-white shadow-black/60' : 'bg-white border-slate-200 text-slate-800'
-          }`}>
-            {/* Cabecera del modal */}
-            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base">Reporte de Auditoría e Insights de IA</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Generado en tiempo real con Groq Llama 3.3</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsAiModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
-                title="Cerrar reporte"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            {/* Contenido del modal */}
-            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-              {renderMarkdown(aiInsights)}
-            </div>
-            {/* Pie del modal */}
-            <div className="p-6 border-t border-slate-100 dark:border-white/5 flex justify-end shrink-0 bg-slate-50/50 dark:bg-black/20">
-              <button
-                onClick={() => setIsAiModalOpen(false)}
-                className="px-6 py-2.5 rounded-xl font-bold text-sm text-white transition shadow-md hover:brightness-110 active:scale-95 cursor-pointer"
-                style={{ backgroundColor: accentColor }}
-              >
-                Cerrar Reporte
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );

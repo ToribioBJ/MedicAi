@@ -104,6 +104,10 @@ def obtener_insights_admin(
                 "administrador": admins
             }
         }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al generar insights con IA: {str(e)}"
         )
 
 
@@ -132,6 +136,7 @@ def obtener_estado_salud(
     
     # 1. Probar base de datos MySQL
     try:
+        from sqlalchemy import text
         start_time = time.time()
         db.execute(text("SELECT 1"))
         latency = int((time.time() - start_time) * 1000)
