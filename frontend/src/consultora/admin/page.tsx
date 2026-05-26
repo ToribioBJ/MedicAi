@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import {
   Users, UserCheck, ShieldAlert, UserX, Search,
-  RotateCw, ShieldCheck, Mail, Calendar, Settings2, Loader2, AlertCircle, CheckCircle2
+  RotateCw, ShieldCheck, Mail, Calendar, Settings2, Loader2, AlertCircle, CheckCircle2,
+  Database, Cpu, Activity, X, ChevronRight
 } from 'lucide-react';
 
 interface Usuario {
@@ -23,6 +24,9 @@ export const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // Selected User for Sidebar details
+  const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
 
   // Alertas
   const [successMsg, setSuccessMsg] = useState('');
@@ -103,8 +107,15 @@ export const AdminDashboardPage = () => {
         throw new Error(errorData.detail || 'Error al cambiar el estado del usuario');
       }
 
-      setUsuarios(prev => prev.map(u => u.id === userId ? { ...u, activo: !currentActivo } : u));
-      setSuccessMsg(`Estado del usuario actualizado a ${!currentActivo ? 'Activo' : 'Inactivo'}`);
+      const updatedActivo = !currentActivo;
+      setUsuarios(prev => prev.map(u => u.id === userId ? { ...u, activo: updatedActivo } : u));
+      
+      // Update sidebar if open on the same user
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, activo: updatedActivo } : null);
+      }
+      
+      setSuccessMsg(`Estado del usuario actualizado a ${updatedActivo ? 'Activo' : 'Inactivo'}`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error al cambiar el estado');
     } finally {
@@ -131,6 +142,12 @@ export const AdminDashboardPage = () => {
       }
 
       setUsuarios(prev => prev.map(u => u.id === userId ? { ...u, role: nuevoRol } : u));
+
+      // Update sidebar if open on the same user
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: nuevoRol } : null);
+      }
+
       setSuccessMsg(`Rol del usuario actualizado a ${nuevoRol.toUpperCase()}`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error al cambiar el rol');
@@ -153,24 +170,38 @@ export const AdminDashboardPage = () => {
     inactivos: usuarios.filter(u => !u.activo).length
   };
 
+  const verifiedPercentage = stats.total > 0 ? Math.round((stats.verificados / stats.total) * 100) : 0;
+  const adminPercentage = stats.total > 0 ? Math.round((stats.administradores / stats.total) * 100) : 0;
+  const inactivePercentage = stats.total > 0 ? Math.round((stats.inactivos / stats.total) * 100) : 0;
+
+  const getLatencyColor = (ms: number) => {
+    if (ms < 50) return 'text-emerald-500 dark:text-emerald-400';
+    if (ms < 200) return 'text-indigo-500 dark:text-indigo-400';
+    return 'text-amber-500 dark:text-amber-400';
+  };
+
   return (
     <div className={`p-6 sm:p-10 max-w-7xl mx-auto space-y-8 font-sans transition-colors duration-300 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
 
       {/* Action Header Row */}
-      <div className="flex justify-end items-center gap-4">
+      <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 dark:border-white/5 pb-5">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Panel Administrativo</h1>
+          <p className="text-xs text-slate-400 mt-1">Supervisa usuarios, roles y la salud operativa del sistema.</p>
+        </div>
         <button
           onClick={() => {
             fetchUsuarios();
             fetchHealthStatus();
           }}
           disabled={loading || healthLoading}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 ${isDark
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 cursor-pointer ${isDark
             ? 'bg-white/5 border-white/10 text-slate-200 hover:border-[var(--color-accent)] hover:text-white'
             : 'bg-white border-slate-200 text-slate-700 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
             }`}
         >
           <RotateCw size={16} className={loading || healthLoading ? 'animate-spin' : ''} />
-          Actualizar Lista
+          Actualizar Datos
         </button>
       </div>
 
@@ -196,98 +227,108 @@ export const AdminDashboardPage = () => {
       )}
 
       {/* Panel de Conectividad y Salud */}
-      <div className={`p-6 rounded-3xl border shadow-sm transition-colors duration-300 ${isDark ? 'bg-[#0E1320]/40 border-white/10' : 'bg-white border-slate-100'}`}>
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-white/5">
+      <div className={`p-6 rounded-3xl border shadow-sm transition-all duration-300 ${isDark ? 'bg-gradient-to-r from-[#0E1320]/60 to-[#0A0D16]/60 border-white/10' : 'bg-gradient-to-r from-white to-slate-50 border-slate-100'}`}>
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 dark:border-white/5">
           <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Settings2 size={14} /> Estado de Conectividad del Sistema
+            <Activity size={16} className="text-[var(--color-accent)] animate-pulse" /> Estado de Conectividad del Sistema
           </h3>
           <button 
             onClick={fetchHealthStatus}
             disabled={healthLoading}
-            className="text-xs font-bold text-[var(--color-accent)] hover:brightness-110 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            className="text-xs font-bold text-[var(--color-accent)] hover:brightness-110 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <RotateCw size={12} className={healthLoading ? 'animate-spin' : ''} /> Probar Conexión
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Base de Datos status */}
-          <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
-            isDark ? 'bg-[#0B0F19]/40 border-white/5' : 'bg-slate-50/50 border-slate-200/50'
+          <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:shadow-md ${
+            isDark ? 'bg-[#0E1320]/80 border-white/5' : 'bg-white border-slate-100'
           }`}>
             <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-bold text-sm text-slate-500 dark:text-slate-400">Base de Datos (MySQL)</h4>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                  {healthStatus?.database.details || "Verificando conexión..."}
-                </p>
+              <div className="flex gap-3">
+                <div className={`p-2.5 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                  <Database size={20} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200">Base de Datos (MySQL)</h4>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                    {healthStatus?.database.details || "Verificando conexión..."}
+                  </p>
+                </div>
               </div>
               {healthStatus ? (
                 healthStatus.database.status === 'connected' ? (
-                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                   </span>
                 ) : (
-                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                   </span>
                 )
               ) : (
-                <span className="flex h-2.5 w-2.5 relative mt-1">
+                <span className="flex h-2.5 w-2.5 relative mt-1.5">
                   <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
                 </span>
               )}
             </div>
             {healthStatus && healthStatus.database.status === 'connected' && (
-              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
                 <span className="text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md">Online</span>
-                <span className="text-slate-400">Latencia: <strong className="text-slate-700 dark:text-slate-200">{healthStatus.database.latency_ms} ms</strong></span>
+                <span className="text-slate-400">Latencia: <strong className={getLatencyColor(healthStatus.database.latency_ms)}>{healthStatus.database.latency_ms} ms</strong></span>
               </div>
             )}
             {healthStatus && healthStatus.database.status === 'error' && (
-              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
                 <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
               </div>
             )}
           </div>
 
           {/* Inteligencia Artificial status */}
-          <div className={`p-4 rounded-2xl border flex flex-col justify-between ${
-            isDark ? 'bg-[#0B0F19]/40 border-white/5' : 'bg-slate-50/50 border-slate-200/50'
+          <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:shadow-md ${
+            isDark ? 'bg-[#0E1320]/80 border-white/5' : 'bg-white border-slate-100'
           }`}>
             <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-bold text-sm text-slate-500 dark:text-slate-400">Servicio de IA (Groq API)</h4>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                  {healthStatus?.groq.details || "Verificando conexión..."}
-                </p>
+              <div className="flex gap-3">
+                <div className={`p-2.5 rounded-xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                  <Cpu size={20} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200">Servicio de IA (Groq API)</h4>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                    {healthStatus?.groq.details || "Verificando conexión..."}
+                  </p>
+                </div>
               </div>
               {healthStatus ? (
                 healthStatus.groq.status === 'connected' ? (
-                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
                   </span>
                 ) : (
-                  <span className="flex h-2.5 w-2.5 relative mt-1">
+                  <span className="flex h-2.5 w-2.5 relative mt-1.5">
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                   </span>
                 )
               ) : (
-                <span className="flex h-2.5 w-2.5 relative mt-1">
+                <span className="flex h-2.5 w-2.5 relative mt-1.5">
                   <span className="animate-pulse relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
                 </span>
               )}
             </div>
             {healthStatus && healthStatus.groq.status === 'connected' && (
-              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
                 <span className="text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-md">Online</span>
-                <span className="text-slate-400">Latencia: <strong className="text-slate-700 dark:text-slate-200">{healthStatus.groq.latency_ms} ms</strong></span>
+                <span className="text-slate-400">Latencia: <strong className={getLatencyColor(healthStatus.groq.latency_ms)}>{healthStatus.groq.latency_ms} ms</strong></span>
               </div>
             )}
             {healthStatus && healthStatus.groq.status === 'error' && (
-              <div className="mt-3 flex items-center justify-between text-xs font-semibold">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs font-bold">
                 <span className="text-rose-500 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-md">Falla de Conexión</span>
               </div>
             )}
@@ -299,50 +340,88 @@ export const AdminDashboardPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
         {/* Total Usuarios */}
-        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex items-center gap-5 transition-colors duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
           }`}>
-          <div className="p-4 rounded-2xl" style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
-            <Users size={28} style={{ color: 'var(--color-accent)' }} />
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 rounded-2xl" style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
+              <Users size={24} style={{ color: 'var(--color-accent)' }} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Usuarios</div>
+              <div className={`text-2xl font-extrabold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.total}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-slate-400">Total Usuarios</div>
-            <div className={`text-3xl font-extrabold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.total}</div>
+          <div className="mt-4 w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ backgroundColor: 'var(--color-accent)', width: '100%' }}></div>
           </div>
         </div>
 
         {/* Verificados */}
-        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex items-center gap-5 transition-colors duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
           }`}>
-          <div className={`p-4 rounded-2xl ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-            <UserCheck size={28} />
+          <div className="flex items-center gap-4">
+            <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+              <UserCheck size={24} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Verificados</div>
+              <div className={`text-2xl font-extrabold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.verificados}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-slate-400">Correo Verificado</div>
-            <div className={`text-3xl font-extrabold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.verificados}</div>
+          <div className="mt-4">
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold mb-1 uppercase">
+              <span>Progreso</span>
+              <span>{verifiedPercentage}%</span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${verifiedPercentage}%` }}></div>
+            </div>
           </div>
         </div>
 
         {/* Administradores */}
-        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex items-center gap-5 transition-colors duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
           }`}>
-          <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-            <ShieldCheck size={28} />
+          <div className="flex items-center gap-4">
+            <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Administradores</div>
+              <div className={`text-2xl font-extrabold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.administradores}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-slate-400">Administradores</div>
-            <div className={`text-3xl font-extrabold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.administradores}</div>
+          <div className="mt-4">
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold mb-1 uppercase">
+              <span>Ratio Admins</span>
+              <span>{adminPercentage}%</span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${adminPercentage}%` }}></div>
+            </div>
           </div>
         </div>
 
         {/* Inactivos */}
-        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex items-center gap-5 transition-colors duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
           }`}>
-          <div className={`p-4 rounded-2xl ${isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
-            <UserX size={28} />
+          <div className="flex items-center gap-4">
+            <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
+              <UserX size={24} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inactivos</div>
+              <div className={`text-2xl font-extrabold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.inactivos}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-slate-400">Cuentas Inactivas</div>
-            <div className={`text-3xl font-extrabold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{stats.inactivos}</div>
+          <div className="mt-4">
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold mb-1 uppercase">
+              <span>Bloqueados</span>
+              <span>{inactivePercentage}%</span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-rose-500 h-full rounded-full" style={{ width: `${inactivePercentage}%` }}></div>
+            </div>
           </div>
         </div>
 
@@ -355,7 +434,10 @@ export const AdminDashboardPage = () => {
         {/* Table Search Header */}
         <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-slate-100'
           }`}>
-          <h2 className={`text-xl font-bold self-start sm:self-auto ${isDark ? 'text-white' : 'text-slate-900'}`}>Listado Clínico de Usuarios</h2>
+          <div>
+            <h2 className={`text-lg font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>Listado Clínico de Usuarios</h2>
+            <p className="text-xs text-slate-400 mt-1">Selecciona una fila para ver el historial y controles detallados.</p>
+          </div>
 
           <div className="relative w-full sm:w-[320px] flex items-center group">
             <Search className="absolute left-4 text-slate-400 group-hover:text-[var(--color-accent)] transition-colors" size={18} />
@@ -400,22 +482,28 @@ export const AdminDashboardPage = () => {
               <tbody className={`divide-y transition-colors duration-300 ${isDark ? 'divide-white/10' : 'divide-slate-100'}`}>
                 {usuariosFiltrados.map((u) => {
                   const isCurrentAdmin = u.id === currentAdmin?.id;
+                  const isSelected = selectedUser?.id === u.id;
 
                   return (
-                    <tr key={u.id} className={`transition-colors font-medium ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/30'}`}>
+                    <tr 
+                      key={u.id} 
+                      onClick={() => setSelectedUser(u)}
+                      className={`transition-all font-medium cursor-pointer ${
+                        isSelected 
+                          ? 'bg-[var(--color-accent)]/10 dark:bg-[var(--color-accent)]/15 border-l-4 border-l-[var(--color-accent)]' 
+                          : isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/30'
+                      }`}
+                    >
 
                       {/* Usuario info */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${u.role === 'administrador'
-                              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                              : ''
-                              }`}
-                            style={u.role !== 'administrador' ? {
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0`}
+                            style={{
                               backgroundColor: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
                               color: 'var(--color-accent)'
-                            } : {}}
+                            }}
                           >
                             {u.nombre.charAt(0).toUpperCase()}
                           </div>
@@ -438,12 +526,12 @@ export const AdminDashboardPage = () => {
 
                       {/* Rol */}
                       <td className="py-4 px-6">
-                        <div className="relative inline-block w-40">
+                        <div className="relative inline-block w-40" onClick={(e) => e.stopPropagation()}>
                           <select
                             value={u.role}
                             onChange={(e) => handleCambiarRol(u.id, e.target.value)}
                             disabled={actionLoading === u.id || isCurrentAdmin}
-                            className={`w-full px-3 py-2 rounded-xl text-sm outline-none font-bold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed border ${isDark
+                            className={`w-full px-3 py-2 rounded-xl text-xs outline-none font-bold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed border ${isDark
                               ? 'bg-[#0E1320] border-white/10 text-white focus:border-[var(--color-accent)] hover:border-white/20'
                               : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-[var(--color-accent)] hover:border-slate-300'
                               }`}
@@ -457,14 +545,14 @@ export const AdminDashboardPage = () => {
                       {/* Verificación de correo */}
                       <td className="py-4 px-6 text-center">
                         {u.email_verified ? (
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700 border-emerald-100/50'
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700 border-emerald-100/50'
                             }`}>
-                            <ShieldCheck size={14} /> Verificado
+                            <ShieldCheck size={12} /> Verificado
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-amber-950/20 border-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700 border-amber-100/50'
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-amber-950/20 border-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700 border-amber-100/50'
                             }`}>
-                            <AlertCircle size={14} /> Pendiente
+                            <AlertCircle size={12} /> Pendiente
                           </span>
                         )}
                       </td>
@@ -472,10 +560,10 @@ export const AdminDashboardPage = () => {
                       {/* Estado Activo */}
                       <td className="py-4 px-6 text-center">
                         {u.activo ? (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${isDark ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                             }`}>Activo</span>
                         ) : (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${isDark ? 'bg-rose-950/20 border-rose-900/30 text-rose-400' : 'bg-rose-50 text-rose-600 border-rose-100'
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-rose-950/20 border-rose-900/30 text-rose-400' : 'bg-rose-50 text-rose-600 border-rose-100'
                             }`}>Inactivo</span>
                         )}
                       </td>
@@ -495,9 +583,12 @@ export const AdminDashboardPage = () => {
                       {/* Acciones */}
                       <td className="py-4 px-6 text-center">
                         <button
-                          onClick={() => handleToggleEstado(u.id, u.activo)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleEstado(u.id, u.activo);
+                          }}
                           disabled={actionLoading === u.id || isCurrentAdmin}
-                          className={`flex items-center gap-1.5 mx-auto font-bold text-xs py-2 px-4 rounded-xl border transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${u.activo
+                          className={`flex items-center gap-1.5 mx-auto font-bold text-xs py-2 px-4 rounded-xl border transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${u.activo
                             ? isDark
                               ? 'bg-rose-950/20 text-rose-400 border-rose-900/50 hover:bg-rose-900/30 hover:border-rose-800'
                               : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50 hover:border-rose-200'
@@ -554,7 +645,185 @@ export const AdminDashboardPage = () => {
         </div>
       </div>
 
+      {/* Sidebar de Detalles de Usuario (Slide-over) */}
+      {selectedUser && (
+        <>
+          {/* Backdrop on mobile/tablet */}
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 lg:hidden animate-in fade-in duration-300"
+            onClick={() => setSelectedUser(null)}
+          />
+          
+          <div className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 shadow-2xl border-l transition-all duration-300 ease-in-out p-6 flex flex-col justify-between ${
+            isDark 
+              ? 'bg-[#0E1320] border-white/10 text-white shadow-black/80' 
+              : 'bg-white border-slate-200 text-slate-800 shadow-slate-300/80'
+          } backdrop-blur-md animate-in slide-in-from-right duration-300`}>
+            
+            <div className="space-y-6 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+              
+              {/* Header */}
+              <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-4">
+                <div className="flex items-center gap-2">
+                  <Activity size={18} className="text-[var(--color-accent)]" />
+                  <span className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Perfil del Paciente</span>
+                </div>
+                <button 
+                  onClick={() => setSelectedUser(null)}
+                  className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors cursor-pointer"
+                  title="Cerrar panel"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
+              {/* Avatar & Basic Info */}
+              <div className="flex flex-col items-center text-center py-4 space-y-3">
+                <div 
+                  className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-3xl shadow-md transition-all duration-300"
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                    color: 'var(--color-accent)',
+                    border: '3px solid var(--color-accent)'
+                  }}
+                >
+                  {selectedUser.nombre.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg flex items-center justify-center gap-1.5">
+                    {selectedUser.nombre}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center justify-center gap-1">
+                    <Mail size={12} /> {selectedUser.email}
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full ${
+                  selectedUser.role === 'administrador'
+                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                    : 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20'
+                }`}>
+                  {selectedUser.role}
+                </span>
+              </div>
+
+              {/* Status Details */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">Detalles del Historial</h4>
+                
+                <div className={`p-4 rounded-2xl space-y-3.5 border ${
+                  isDark ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'
+                }`}>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">ID de Registro</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedUser.id}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Verificación de Correo</span>
+                    {selectedUser.email_verified ? (
+                      <span className="text-emerald-500 dark:text-emerald-400 font-extrabold flex items-center gap-1 uppercase text-[10px]">
+                        <ShieldCheck size={12} /> Verificado
+                      </span>
+                    ) : (
+                      <span className="text-amber-500 dark:text-amber-400 font-extrabold flex items-center gap-1 uppercase text-[10px]">
+                        <AlertCircle size={12} /> Pendiente
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Estado de la Cuenta</span>
+                    {selectedUser.activo ? (
+                      <span className="text-emerald-500 dark:text-emerald-400 font-bold uppercase text-[10px]">Activo</span>
+                    ) : (
+                      <span className="text-rose-500 dark:text-rose-400 font-bold uppercase text-[10px]">Inactivo</span>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Fecha de Registro</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                      <Calendar size={12} className="text-slate-400" />
+                      {new Date(selectedUser.fecha_registro).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions Panel */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">Controles Administrativos</h4>
+                
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-400">Cambiar Rol del Usuario</label>
+                    <select
+                      value={selectedUser.role}
+                      onChange={(e) => {
+                        handleCambiarRol(selectedUser.id, e.target.value);
+                      }}
+                      disabled={actionLoading === selectedUser.id || selectedUser.id === currentAdmin?.id}
+                      className={`w-full px-3 py-2.5 rounded-xl text-xs outline-none font-bold border transition-colors cursor-pointer ${
+                        isDark 
+                          ? 'bg-[#0E1320] border-white/10 text-white focus:border-[var(--color-accent)]' 
+                          : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-[var(--color-accent)]'
+                      }`}
+                    >
+                      <option value="usuario">Usuario normal</option>
+                      <option value="administrador">Administrador</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-400">Estado de Operación</label>
+                    <button
+                      onClick={() => {
+                        handleToggleEstado(selectedUser.id, selectedUser.activo);
+                      }}
+                      disabled={actionLoading === selectedUser.id || selectedUser.id === currentAdmin?.id}
+                      className={`w-full flex items-center justify-center gap-2 font-bold text-xs py-3 px-4 rounded-xl border transition shadow-sm cursor-pointer ${
+                        selectedUser.activo
+                          ? 'bg-rose-600/10 text-rose-500 border-rose-500/20 hover:bg-rose-500 hover:text-white'
+                          : 'bg-emerald-600/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
+                      } disabled:opacity-50`}
+                    >
+                      {actionLoading === selectedUser.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : selectedUser.activo ? (
+                        <>
+                          <UserX size={14} /> Desactivar y Bloquear Cuenta
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck size={14} /> Activar y Desbloquear Cuenta
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-slate-100 dark:border-white/5 pt-4 flex gap-3 shrink-0">
+              <button 
+                onClick={() => setSelectedUser(null)}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-xs border text-center transition-all cursor-pointer ${
+                  isDark 
+                    ? 'border-white/10 hover:bg-white/5 text-slate-300' 
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                Cerrar Panel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   );
