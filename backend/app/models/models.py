@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import (
-    Column, Integer, String, Text, Date, DateTime, Enum, ForeignKey, Boolean
+    Column, Integer, String, Text, DateTime, Enum, ForeignKey, Boolean
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -27,6 +28,17 @@ class Usuario(Base):
 
     citas = relationship("Cita", back_populates="usuario", cascade="all, delete-orphan")
     conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")
+    telegram_user = relationship("TelegramUser", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+
+    @property
+    def cant_conversaciones(self) -> int:
+        return len(self.conversaciones)
+
+    @property
+    def telegram_chat_id(self) -> Optional[str]:
+        if self.telegram_user and not self.email.endswith("@telegram.medicai"):
+            return self.telegram_user.telegram_chat_id
+        return None
 
 
 class Cita(Base):
@@ -87,4 +99,4 @@ class TelegramUser(Base):
     telegram_linking_email = Column(String(150), nullable=True)
     fecha_registro = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    usuario = relationship("Usuario")
+    usuario = relationship("Usuario", back_populates="telegram_user")

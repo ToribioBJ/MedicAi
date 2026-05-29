@@ -25,5 +25,6 @@ class UsuarioOut(UsuarioBase):
     email_verified: bool
     fecha_registro: datetime
     telegram_chat_id: Optional[str] = None
+    cant_conversaciones: int = 0
 
     model_config = ConfigDict(from_attributes=True)

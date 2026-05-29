@@ -24,7 +24,6 @@ try:
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
-        from app.models.models import Usuario, Cita
         if db.query(Usuario).count() == 0:
             logger.info(">>> Base de datos vacía. Creando usuario administrador semilla...")
             admin = Usuario(

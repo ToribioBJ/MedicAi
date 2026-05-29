@@ -1,4 +1,3 @@
-import { type Mensaje } from '../../api/chatbotApi';
 import logoMedicAI from '../../img/logo-medica.png';
 
 interface Props {

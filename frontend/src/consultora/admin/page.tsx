@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import {
   Users, UserCheck, ShieldAlert, UserX, Search,
   RotateCw, ShieldCheck, Mail, Calendar, Settings2, Loader2, AlertCircle, CheckCircle2,
-  Database, Cpu, Activity, X, ChevronRight
+  Database, Cpu, Activity, X, MessageSquare
 } from 'lucide-react';
 
 interface Usuario {
@@ -15,11 +15,13 @@ interface Usuario {
   role: string;
   email_verified: boolean;
   fecha_registro: string;
+  cant_conversaciones: number;
+  telegram_chat_id?: string | null;
 }
 
 export const AdminDashboardPage = () => {
   const { token, user: currentAdmin } = useAuth();
-  const { accentColor, isDark } = useTheme();
+  const { isDark } = useTheme();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +31,7 @@ export const AdminDashboardPage = () => {
   const [telegramUsers, setTelegramUsers] = useState<any[]>([]);
   const [tgLoading, setTgLoading] = useState(false);
   const [tgSearchTerm, setTgSearchTerm] = useState('');
+  const [hoveredSegment, setHoveredSegment] = useState<'web' | 'tg_linked' | 'tg_guest' | null>(null);
 
 
   // Selected User for Sidebar details
@@ -42,6 +45,7 @@ export const AdminDashboardPage = () => {
   const [healthStatus, setHealthStatus] = useState<{
     database: { status: 'connected' | 'disconnected' | 'error'; details: string; latency_ms: number };
     groq: { status: 'connected' | 'disconnected' | 'error'; details: string; latency_ms: number };
+    telegram: { status: 'connected' | 'disconnected' | 'error'; details: string; latency_ms: number };
   } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
 
@@ -238,12 +242,9 @@ export const AdminDashboardPage = () => {
   const verifiedPercentage = stats.total > 0 ? Math.round((stats.verificados / stats.total) * 100) : 0;
   const adminPercentage = stats.total > 0 ? Math.round((stats.administradores / stats.total) * 100) : 0;
   const inactivePercentage = stats.total > 0 ? Math.round((stats.inactivos / stats.total) * 100) : 0;
+  const totalConversaciones = usuarios.reduce((acc, u) => acc + (u.cant_conversaciones || 0), 0);
 
-  const getLatencyColor = (ms: number) => {
-    if (ms < 50) return 'text-emerald-500 dark:text-emerald-400';
-    if (ms < 200) return 'text-indigo-500 dark:text-indigo-400';
-    return 'text-amber-500 dark:text-amber-400';
-  };
+
 
   return (
     <div className={`p-6 sm:p-10 max-w-7xl mx-auto space-y-8 font-sans transition-colors duration-300 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
@@ -295,7 +296,7 @@ export const AdminDashboardPage = () => {
 
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
         {/* Total Usuarios */}
         <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
@@ -383,7 +384,316 @@ export const AdminDashboardPage = () => {
           </div>
         </div>
 
+        {/* Total Conversaciones */}
+        <div className={`p-6 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+          }`}>
+          <div className="flex items-center gap-4">
+            <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+              <MessageSquare size={24} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Conversaciones</div>
+              <div className={`text-2xl font-extrabold mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{totalConversaciones}</div>
+            </div>
+          </div>
+          <div className="mt-4 w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-blue-500" style={{ width: '100%' }}></div>
+          </div>
+        </div>
+
       </div>
+
+      {/* Sección de Gráficos Estadísticos */}
+      {!loading && !tgLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          
+          {/* Tarjeta 1: Donut de Distribución de Cuentas */}
+          <div className={`p-6 rounded-[2.5rem] border shadow-[0_12px_30px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 ${
+            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+          }`}>
+            <div>
+              <h3 className="text-base font-extrabold tracking-tight">Distribución por Canales</h3>
+              <p className="text-xs text-slate-400 mt-1">Proporción de usuarios registrados según el canal de interacción.</p>
+            </div>
+
+            {(() => {
+              const webOnlyCount = usuarios.filter(u => !u.email.endsWith('@telegram.medicai')).length;
+              const tgLinkedCount = telegramUsers.filter(tg => tg.linked).length;
+              const tgGuestCount = telegramUsers.filter(tg => !tg.linked).length;
+              const total = webOnlyCount + tgLinkedCount + tgGuestCount;
+
+              const webPercent = total > 0 ? Math.round((webOnlyCount / total) * 100) : 0;
+              const linkedPercent = total > 0 ? Math.round((tgLinkedCount / total) * 100) : 0;
+              const guestPercent = total > 0 ? Math.round((tgGuestCount / total) * 100) : 0;
+
+              // Parámetros de los arcos del Donut SVG
+              // C = 2 * pi * r = 2 * 3.14159 * 50 = 314.16
+              const r = 50;
+              const circ = 2 * Math.PI * r;
+
+              const webStroke = (webOnlyCount / (total || 1)) * circ;
+              const linkedStroke = (tgLinkedCount / (total || 1)) * circ;
+              const guestStroke = (tgGuestCount / (total || 1)) * circ;
+
+              const offset1 = 0;
+
+              return (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-6">
+                  {/* SVG Donut */}
+                  <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                      {total === 0 ? (
+                        <circle cx="60" cy="60" r={r} fill="transparent" stroke={isDark ? '#1e293b' : '#f1f5f9'} strokeWidth="14" />
+                      ) : (
+                        <>
+                          {/* Segmento 1: Web Only */}
+                          {webOnlyCount > 0 && (
+                            <circle
+                              cx="60"
+                              cy="60"
+                              r={r}
+                              fill="transparent"
+                              stroke="var(--color-accent)"
+                              strokeWidth={hoveredSegment === 'web' ? '18' : '14'}
+                              strokeDasharray={`${webStroke} ${circ - webStroke}`}
+                              strokeDashoffset={offset1}
+                              onMouseEnter={() => setHoveredSegment('web')}
+                              onMouseLeave={() => setHoveredSegment(null)}
+                              className="transition-all duration-300 cursor-pointer animate-draw"
+                            />
+                          )}
+                          {/* Segmento 2: Telegram Vinculado */}
+                          {tgLinkedCount > 0 && (
+                            <circle
+                              cx="60"
+                              cy="60"
+                              r={r}
+                              fill="transparent"
+                              stroke="#6366f1"
+                              strokeWidth={hoveredSegment === 'tg_linked' ? '18' : '14'}
+                              strokeDasharray={`${linkedStroke} ${circ - linkedStroke}`}
+                              strokeDashoffset={-webStroke}
+                              onMouseEnter={() => setHoveredSegment('tg_linked')}
+                              onMouseLeave={() => setHoveredSegment(null)}
+                              className="transition-all duration-300 cursor-pointer"
+                            />
+                          )}
+                          {/* Segmento 3: Telegram Invitado */}
+                          {tgGuestCount > 0 && (
+                            <circle
+                              cx="60"
+                              cy="60"
+                              r={r}
+                              fill="transparent"
+                              stroke="#06b6d4"
+                              strokeWidth={hoveredSegment === 'tg_guest' ? '18' : '14'}
+                              strokeDasharray={`${guestStroke} ${circ - guestStroke}`}
+                              strokeDashoffset={-(webStroke + linkedStroke)}
+                              onMouseEnter={() => setHoveredSegment('tg_guest')}
+                              onMouseLeave={() => setHoveredSegment(null)}
+                              className="transition-all duration-300 cursor-pointer"
+                            />
+                          )}
+                        </>
+                      )}
+                    </svg>
+                    
+                    {/* Etiqueta Central */}
+                    <div className="absolute flex flex-col items-center justify-center leading-none text-center pointer-events-none">
+                      {hoveredSegment === 'web' && (
+                        <>
+                          <span className="text-[10px] font-black uppercase text-slate-400">Web</span>
+                          <span className="text-xl font-black mt-1 text-[var(--color-accent)]">{webPercent}%</span>
+                          <span className="text-[9px] font-bold text-slate-400 mt-0.5">{webOnlyCount} {webOnlyCount === 1 ? 'usuario' : 'usuarios'}</span>
+                        </>
+                      )}
+                      {hoveredSegment === 'tg_linked' && (
+                        <>
+                          <span className="text-[10px] font-black uppercase text-slate-400">Vinculados</span>
+                          <span className="text-xl font-black mt-1 text-indigo-500">{linkedPercent}%</span>
+                          <span className="text-[9px] font-bold text-slate-400 mt-0.5">{tgLinkedCount} {tgLinkedCount === 1 ? 'usuario' : 'usuarios'}</span>
+                        </>
+                      )}
+                      {hoveredSegment === 'tg_guest' && (
+                        <>
+                          <span className="text-[10px] font-black uppercase text-slate-400">Invitados</span>
+                          <span className="text-xl font-black mt-1 text-cyan-500">{guestPercent}%</span>
+                          <span className="text-[9px] font-bold text-slate-400 mt-0.5">{tgGuestCount} {tgGuestCount === 1 ? 'chat' : 'chats'}</span>
+                        </>
+                      )}
+                      {!hoveredSegment && (
+                        <>
+                          <span className="text-[10px] font-black uppercase text-slate-400">Total</span>
+                          <span className={`text-2xl font-black mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{total}</span>
+                          <span className="text-[9px] font-bold text-slate-400 mt-0.5">Registros</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Leyenda Lateral Interactiva */}
+                  <div className="flex-1 space-y-3.5 w-full">
+                    {/* Web Only */}
+                    <div 
+                      onMouseEnter={() => setHoveredSegment('web')}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-300 ${
+                        hoveredSegment === 'web'
+                          ? 'bg-[var(--color-accent)]/5 border-[var(--color-accent)]/20 shadow-sm'
+                          : 'bg-transparent border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-3 w-3 rounded-full bg-[var(--color-accent)] shrink-0"></span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Acceso Web Exclusivo</span>
+                          <span className="text-[10px] text-slate-400">Registrados por la plataforma web</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>{webOnlyCount}</span>
+                        <span className="text-[10px] text-slate-400 font-bold block">{webPercent}%</span>
+                      </div>
+                    </div>
+
+                    {/* Telegram Vinculado */}
+                    <div 
+                      onMouseEnter={() => setHoveredSegment('tg_linked')}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-300 ${
+                        hoveredSegment === 'tg_linked'
+                          ? 'bg-indigo-500/5 border-indigo-500/20 shadow-sm'
+                          : 'bg-transparent border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-3 w-3 rounded-full bg-indigo-500 shrink-0"></span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Telegram Vinculados</span>
+                          <span className="text-[10px] text-slate-400">Chats asociados a una cuenta web</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>{tgLinkedCount}</span>
+                        <span className="text-[10px] text-slate-400 font-bold block">{linkedPercent}%</span>
+                      </div>
+                    </div>
+
+                    {/* Telegram Invitado */}
+                    <div 
+                      onMouseEnter={() => setHoveredSegment('tg_guest')}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-300 ${
+                        hoveredSegment === 'tg_guest'
+                          ? 'bg-cyan-500/5 border-cyan-500/20 shadow-sm'
+                          : 'bg-transparent border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-3 w-3 rounded-full bg-cyan-500 shrink-0"></span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Telegram Invitados</span>
+                          <span className="text-[10px] text-slate-400">Interacción directa sin cuenta web</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>{tgGuestCount}</span>
+                        <span className="text-[10px] text-slate-400 font-bold block">{guestPercent}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Tarjeta 2: Gráfico de Barras de Salud de Cuentas */}
+          <div className={`p-6 rounded-[2.5rem] border shadow-[0_12px_30px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 ${
+            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
+          }`}>
+            <div>
+              <h3 className="text-base font-extrabold tracking-tight">Estado de Cuentas</h3>
+              <p className="text-xs text-slate-400 mt-1">Comparativa de salud de las cuentas de usuario y telemetría de accesos.</p>
+            </div>
+
+            {(() => {
+              const total = usuarios.length;
+              const activosCount = usuarios.filter(u => u.activo).length;
+              const verificadosCount = usuarios.filter(u => u.email_verified).length;
+              const adminsCount = usuarios.filter(u => u.role === 'administrador').length;
+              const telegramTotal = telegramUsers.length;
+
+              const activePct = total > 0 ? Math.round((activosCount / total) * 100) : 0;
+              const verifiedPct = total > 0 ? Math.round((verificadosCount / total) * 100) : 0;
+              const adminPct = total > 0 ? Math.round((adminsCount / total) * 100) : 0;
+              
+              // El porcentaje de telegram es en base a los usuarios web registrados para comparar volumen
+              const tgPct = total > 0 ? Math.min(Math.round((telegramTotal / total) * 100), 100) : 0;
+
+              return (
+                <div className="space-y-4 mt-6">
+                  {/* Fila 1: Activos */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Cuentas Activas</span>
+                      <span className="text-slate-400 font-extrabold">{activosCount} / {total} ({activePct}%)</span>
+                    </div>
+                    <div className="w-full h-3.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200/40 dark:border-white/5">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000 ease-out origin-left"
+                        style={{ width: `${activePct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fila 2: Verificados */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Correos Verificados</span>
+                      <span className="text-slate-400 font-extrabold">{verificadosCount} / {total} ({verifiedPct}%)</span>
+                    </div>
+                    <div className="w-full h-3.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200/40 dark:border-white/5">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400 transition-all duration-1000 ease-out origin-left"
+                        style={{ width: `${verifiedPct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fila 3: Administradores */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Administradores</span>
+                      <span className="text-slate-400 font-extrabold">{adminsCount} / {total} ({adminPct}%)</span>
+                    </div>
+                    <div className="w-full h-3.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200/40 dark:border-white/5">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-400 transition-all duration-1000 ease-out origin-left"
+                        style={{ width: `${adminPct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fila 4: Telegram */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Volumen en Telegram</span>
+                      <span className="text-slate-400 font-extrabold">{telegramTotal} chats registrados</span>
+                    </div>
+                    <div className="w-full h-3.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200/40 dark:border-white/5">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-all duration-1000 ease-out origin-left"
+                        style={{ width: `${tgPct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+        </div>
+      )}
 
       {/* Selector de Pestañas */}
       <div className="flex gap-4 border-b border-slate-100 dark:border-white/5 pb-2">
@@ -471,6 +781,7 @@ export const AdminDashboardPage = () => {
                   <th className="py-4 px-6">Usuario</th>
                   <th className="py-4 px-6">Rol</th>
                   <th className="py-4 px-6 text-center">Verificación</th>
+                  <th className="py-4 px-6 text-center">Telegram</th>
                   <th className="py-4 px-6 text-center">Estado</th>
                   <th className="py-4 px-6">Fecha Registro</th>
                   <th className="py-4 px-6 text-center">Acciones</th>
@@ -550,6 +861,21 @@ export const AdminDashboardPage = () => {
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-amber-950/20 border-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700 border-amber-100/50'
                             }`}>
                             <AlertCircle size={12} /> Pendiente
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Telegram status */}
+                      <td className="py-4 px-6 text-center">
+                        {u.telegram_chat_id ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-blue-950/20 border-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-700 border-blue-100/50'
+                            }`}>
+                            Conectado
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${isDark ? 'bg-slate-950/20 border-slate-900/30 text-slate-400' : 'bg-slate-50 text-slate-500 border-slate-100'
+                            }`}>
+                            No conectado
                           </span>
                         )}
                       </td>
@@ -797,6 +1123,31 @@ export const AdminDashboardPage = () => {
             )}
           </div>
 
+          {/* Separator */}
+          <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-white/10"></div>
+
+          {/* Telegram Bot Status */}
+          <div className="flex items-center gap-2">
+            <MessageSquare size={14} className="text-slate-400" />
+            <span>Bot Telegram:</span>
+            {healthStatus ? (
+              healthStatus.telegram.status === 'connected' ? (
+                <div className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  <span className="text-blue-500 font-bold">Online</span>
+                  <span className="text-slate-400">({healthStatus.telegram.latency_ms}ms)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1" title={healthStatus.telegram.details}>
+                  <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+                  <span className="text-rose-500 font-bold">Error</span>
+                </div>
+              )
+            ) : (
+              <span className="text-slate-400 animate-pulse">Chequeando...</span>
+            )}
+          </div>
+
           {/* Action button */}
           <button 
             onClick={fetchHealthStatus}
@@ -938,6 +1289,27 @@ export const AdminDashboardPage = () => {
                         day: 'numeric'
                       })}
                     </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Conversaciones</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                      <MessageSquare size={12} className="text-slate-400" />
+                      {selectedUser.cant_conversaciones || 0}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Telegram</span>
+                    {selectedUser.telegram_chat_id ? (
+                      <span className="text-blue-500 dark:text-blue-400 font-extrabold flex items-center gap-1 uppercase text-[10px]">
+                        Conectado ({selectedUser.telegram_chat_id})
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-extrabold flex items-center gap-1 uppercase text-[10px]">
+                        No conectado
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

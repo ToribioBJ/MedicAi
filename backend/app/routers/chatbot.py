@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.models.models import Conversacion, MensajeChat
 from app.schemas.chatbot import (
     ChatRequest, ChatResponse, ConversacionOut, 
-    ConversacionDetalleOut, MensajeOut
+    ConversacionDetalleOut
 )
 from app.services.ai_service import ChatService
 

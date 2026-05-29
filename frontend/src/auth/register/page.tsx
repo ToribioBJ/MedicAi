@@ -39,7 +39,7 @@ export const RegisterPage = () => {
   // Temporizadores para OTP (2 minutos = 120 segundos)
   const [timer, setTimer] = useState(120);
   const [canResend, setCanResend] = useState(false);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerIntervalRef = useRef<any>(null);
 
   const navigate = useNavigate();
   const { login } = useAuth();

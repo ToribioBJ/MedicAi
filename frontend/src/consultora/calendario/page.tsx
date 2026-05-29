@@ -6,7 +6,6 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Clock, Trash2 } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
 import { listarCitas, eliminarCita, type Cita } from '../../api/citasApi';
@@ -20,7 +19,6 @@ const estadoColor: Record<string, string> = {
 };
 
 const CalendarioPage = () => {
-  const { isDark } = useTheme();
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());

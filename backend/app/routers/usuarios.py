@@ -2,7 +2,7 @@ import re
 import secrets
 from datetime import datetime, timedelta
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -117,9 +117,10 @@ def obtener_estado_salud(
     current_user: Usuario = Depends(get_current_admin_user)
 ):
     """
-    Verifica la conectividad en tiempo real con la base de datos (MySQL) y el servicio de IA (Groq).
+    Verifica la conectividad en tiempo real con la base de datos (MySQL), el servicio de IA (Groq) y el bot de Telegram.
     """
     import time
+    import httpx
     
     health = {
         "database": {
@@ -128,6 +129,11 @@ def obtener_estado_salud(
             "latency_ms": 0
         },
         "groq": {
+            "status": "disconnected",
+            "details": "",
+            "latency_ms": 0
+        },
+        "telegram": {
             "status": "disconnected",
             "details": "",
             "latency_ms": 0
@@ -155,7 +161,6 @@ def obtener_estado_salud(
             health["groq"]["details"] = "Clave CHATBOT_API_KEY no encontrada en variables de entorno."
         else:
             start_time = time.time()
-            # Intento de listar modelos como test de conectividad y validez de la API key
             client.models.list()
             latency = int((time.time() - start_time) * 1000)
             health["groq"]["status"] = "connected"
@@ -164,6 +169,43 @@ def obtener_estado_salud(
     except Exception as e:
         health["groq"]["status"] = "error"
         health["groq"]["details"] = f"Error en la API de Groq: {str(e)}"
+
+    # 3. Probar API de Telegram y estado local del bot
+    try:
+        import os
+        token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not token:
+            health["telegram"]["status"] = "disconnected"
+            health["telegram"]["details"] = "Clave TELEGRAM_BOT_TOKEN no encontrada en variables de entorno."
+        else:
+            start_time = time.time()
+            url = f"https://api.telegram.org/bot{token}/getMe"
+            with httpx.Client(timeout=3.0) as client_http:
+                resp = client_http.get(url)
+                latency = int((time.time() - start_time) * 1000)
+                if resp.status_code == 200:
+                    bot_data = resp.json().get("result", {})
+                    username = bot_data.get("username", "MedicAI_Bot")
+                    
+                    # Verificar si el bot está corriendo localmente
+                    import app.services.telegram_bot as tg_service
+                    is_running = (
+                        tg_service.telegram_app is not None 
+                        and tg_service.telegram_app.updater is not None 
+                        and tg_service.telegram_app.updater.running
+                    )
+                    status_local = "Activo" if is_running else "Inactivo (Proceso local detenido)"
+                    
+                    health["telegram"]["status"] = "connected" if is_running else "error"
+                    health["telegram"]["details"] = f"Bot @{username} listo en servidores de Telegram. Estado local: {status_local}."
+                    health["telegram"]["latency_ms"] = latency
+                else:
+                    health["telegram"]["status"] = "error"
+                    health["telegram"]["details"] = f"Error de autenticación con Telegram (HTTP {resp.status_code})."
+                    health["telegram"]["latency_ms"] = latency
+    except Exception as e:
+        health["telegram"]["status"] = "error"
+        health["telegram"]["details"] = f"Error al verificar API de Telegram: {str(e)}"
         
     return health
 
