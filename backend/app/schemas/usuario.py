@@ -24,5 +24,6 @@ class UsuarioOut(UsuarioBase):
     role: str
     email_verified: bool
     fecha_registro: datetime
+    telegram_chat_id: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

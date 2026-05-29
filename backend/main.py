@@ -4,9 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import engine, Base
 from app.models import (
-    Usuario, Cita, Conversacion, MensajeChat
+    Usuario, Cita, Conversacion, MensajeChat, TelegramUser
 )
 from app.routers import usuarios, citas, chatbot, auth
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -88,6 +89,18 @@ app.include_router(usuarios.router)
 app.include_router(citas.router)
 app.include_router(chatbot.router)
 app.include_router(auth.router)
+
+
+from app.services.telegram_bot import start_telegram_bot, stop_telegram_bot
+
+@app.on_event("startup")
+async def startup_event():
+    await start_telegram_bot()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await stop_telegram_bot()
+
 
 
 @app.get("/", tags=["Health"])

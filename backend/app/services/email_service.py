@@ -273,3 +273,109 @@ def enviar_correo_recuperacion(destinatario: str, nombre: str, token: str):
     </html>
     """
     return _enviar_smtp(destinatario, asunto, html)
+
+
+def enviar_correo_vinculacion_telegram(destinatario: str, nombre: str, codigo: str):
+    """
+    Envía el correo de verificación OTP para vincular la cuenta a Telegram.
+    """
+    asunto = "🤖 Vincula tu cuenta de MedicAI con Telegram"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vinculación de Telegram</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f4f7fb;
+                margin: 0;
+                padding: 0;
+                color: #334155;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 40px auto;
+                background-color: #ffffff;
+                border-radius: 24px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+                border: 1px solid #e2e8f0;
+            }}
+            .header {{
+                background: linear-gradient(135deg, #7c3aed, #4f46e5);
+                padding: 40px 20px;
+                text-align: center;
+                color: #ffffff;
+            }}
+            .header h1 {{
+                margin: 10px 0 0 0;
+                font-size: 28px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+            }}
+            .content {{
+                padding: 40px 30px;
+                line-height: 1.6;
+                text-align: center;
+            }}
+            .content p {{
+                margin: 0 0 20px 0;
+                font-size: 16px;
+                text-align: left;
+            }}
+            .code-container {{
+                background-color: #f5f3ff;
+                border-radius: 16px;
+                padding: 20px;
+                margin: 30px auto;
+                max-width: 240px;
+                border: 2px dashed #c084fc;
+                text-align: center;
+            }}
+            .code {{
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 38px;
+                font-weight: 900;
+                letter-spacing: 6px;
+                color: #6b21a8;
+                margin: 0;
+            }}
+            .footer {{
+                background-color: #f8fafc;
+                padding: 24px;
+                text-align: center;
+                font-size: 13px;
+                color: #64748b;
+                border-top: 1px solid #f1f5f9;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>MedicAI - Telegram Bot</h1>
+            </div>
+            <div class="content">
+                <p>Hola, <strong>{nombre}</strong>,</p>
+                <p>Hemos recibido una solicitud para vincular tu cuenta de MedicAI con tu cuenta de Telegram.</p>
+                <p>Por favor, ingresa el siguiente código de verificación de 6 dígitos en tu chat con el bot de Telegram:</p>
+                <div class="code-container">
+                    <h2 class="code">{codigo}</h2>
+                </div>
+                <p style="text-align: center; font-size: 14px; color: #64748b;">Este código de confirmación expirará en 15 minutos.</p>
+                <p>Si no fuiste tú quien solicitó vincular la cuenta, puedes ignorar este correo sin ningún problema.</p>
+            </div>
+            <div class="footer">
+                <p>&copy; 2026 MedicAI. Todos los derechos reservados.</p>
+                <p>Asistente de salud inteligente y triaje asistido por IA.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return _enviar_smtp(destinatario, asunto, html)
+

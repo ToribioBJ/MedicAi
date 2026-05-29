@@ -26,18 +26,45 @@ export const ChatbotPage = () => {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
 
-  // Sincronizar mensajes cuando cambia el ID de la URL
+  // Sincronizar mensajes cuando cambia el ID de la URL y hacer polling cada 3 segundos
   useEffect(() => {
-    if (id) {
-      obtenerDetalleChat(Number(id)).then(r => {
-        setMensajes(r.data.mensajes);
-      }).catch(() => {
-        navigate('/chatbot'); // Si el ID no es válido, volver al inicio
-      });
-    } else {
+    if (!id) {
       setMensajes([]);
+      return;
     }
-  }, [id, navigate]);
+
+    const cargarMensajes = () => {
+      // Solo refrescar si no se está esperando respuesta de un mensaje enviado desde la web
+      if (!isTyping) {
+        obtenerDetalleChat(Number(id))
+          .then(r => {
+            const nuevos = r.data.mensajes;
+            setMensajes(prev => {
+              // Si la cantidad o contenido de los mensajes cambió, actualizar el estado
+              if (prev.length !== nuevos.length || JSON.stringify(prev) !== JSON.stringify(nuevos)) {
+                return nuevos;
+              }
+              return prev;
+            });
+          })
+          .catch(() => {});
+      }
+    };
+
+    // Carga inicial al cambiar de chat
+    obtenerDetalleChat(Number(id))
+      .then(r => {
+        setMensajes(r.data.mensajes);
+      })
+      .catch(() => {
+        navigate('/chatbot');
+      });
+
+    // Iniciar intervalo de refresco automático
+    const interval = setInterval(cargarMensajes, 3000);
+
+    return () => clearInterval(interval);
+  }, [id, navigate, isTyping]);
 
   const handleSend = async (textOverride?: string, imagen?: string) => {
     const textToSend = textOverride || input;

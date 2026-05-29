@@ -1,6 +1,12 @@
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import type { ThemeMode, FontSize } from '../../context/ThemeContext';
-import { Palette, Monitor, Type, Check, Sun, Moon, Laptop, RotateCcw, LayoutGrid } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { 
+  Palette, Monitor, Type, Check, Sun, Moon, Laptop, RotateCcw, 
+  LayoutGrid, Send, ExternalLink, Loader2 
+} from 'lucide-react';
+
 
 // ─── Colores disponibles ──────────────────────────────────────────────────────
 const ACCENT_COLORS = [
@@ -81,6 +87,56 @@ export default function ConfiguracionPage() {
     animations, setAnimations,
     isDark,
   } = useTheme();
+
+  const { user, token } = useAuth();
+  const [telegramChatId, setTelegramChatId] = useState<string | null>(null);
+  const [loadingTelegram, setLoadingTelegram] = useState(false);
+  const [fetchingUser, setFetchingUser] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      setFetchingUser(true);
+      fetch(`http://localhost:8000/api/usuarios/${user.id}/telegram-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.linked && data.telegram_chat_id) {
+          setTelegramChatId(data.telegram_chat_id);
+        } else {
+          setTelegramChatId(null);
+        }
+        setFetchingUser(false);
+      })
+      .catch(err => {
+        console.error("Error fetching user data:", err);
+        setFetchingUser(false);
+      });
+    }
+  }, [user?.id, token]);
+
+  const handleDesvincularTelegram = async () => {
+    if (!user?.id) return;
+    setLoadingTelegram(true);
+    try {
+      const response = await fetch(`http://localhost:8000/api/usuarios/${user.id}/unlink-telegram`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        setTelegramChatId(null);
+      }
+    } catch (err) {
+      console.error("Error unlinking telegram:", err);
+    } finally {
+      setLoadingTelegram(false);
+    }
+  };
+
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-8 animate-in fade-in duration-500">
@@ -224,6 +280,85 @@ export default function ConfiguracionPage() {
             <Row label="Animaciones del sistema" description="Habilita efectos de desplazamiento y transiciones en la plataforma">
               <Toggle id="toggle-animations" checked={animations} onChange={setAnimations} />
             </Row>
+          </Card>
+
+          {/* ── Integración con Telegram ───────────────────────────────── */}
+          <Card title="Integración con Telegram" icon={Send}>
+            <div className="py-4 space-y-4">
+              {fetchingUser ? (
+                <div className="flex justify-center items-center py-6">
+                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: accentColor }} />
+                  <span className="text-xs text-slate-400 font-bold ml-2">Cargando estado de Telegram...</span>
+                </div>
+              ) : telegramChatId ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Estado</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                      VINCULADO
+                    </span>
+                  </div>
+                  <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
+                    Tu cuenta de MedicAI está vinculada de manera segura con tu cuenta de Telegram (ID de chat: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 font-mono">{telegramChatId}</code>).
+                  </p>
+                  <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                    Puedes utilizar tu bot de Telegram para chatear con la IA de salud, consultar síntomas, analizar imágenes clínicas y agendar citas automáticamente en tu calendario MedicAI.
+                  </p>
+                  <button
+                    onClick={handleDesvincularTelegram}
+                    disabled={loadingTelegram}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white font-bold text-xs cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    {loadingTelegram ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <span>Desvincular Cuenta de Telegram</span>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Estado</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-slate-500/10 text-slate-500 border border-slate-500/20">
+                      DESCONECTADO
+                    </span>
+                  </div>
+                  
+                  <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
+                    Para conectar MedicAI con tu bot de Telegram y poder agendar citas directamente mediante notas de voz o texto, sigue estos pasos:
+                  </p>
+                  
+                  <ol className={`text-xs list-decimal pl-4 space-y-2 font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
+                    <li>
+                      Busca al bot <a href="https://t.me/MedicAiHealthBot" target="_blank" rel="noopener noreferrer" className="font-bold underline" style={{ color: accentColor }}>@MedicAiHealthBot</a> en Telegram.
+                    </li>
+                    <li>
+                      Inicia el chat y envía el comando: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 font-mono">/vincular {user?.email}</code>
+                    </li>
+                    <li>
+                      Revisa tu correo electrónico para obtener el código de verificación de 6 dígitos que te enviaremos.
+                    </li>
+                    <li>
+                      Responde al bot en Telegram con el comando: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 font-mono">/confirmar TU_CODIGO</code>
+                    </li>
+                  </ol>
+
+                  <a
+                    href="https://t.me/MedicAiHealthBot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-xs text-white shadow-md hover:scale-[1.01] active:scale-95 transition-all text-center"
+                    style={{ background: 'linear-gradient(135deg, #229ED9 0%, #1782B2 100%)' }}
+                  >
+                    <Send size={14} />
+                    <span>Abrir Chat en Telegram</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              )}
+            </div>
           </Card>
 
         </div>

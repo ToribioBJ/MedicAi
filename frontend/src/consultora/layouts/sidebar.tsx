@@ -31,7 +31,12 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
 
   useEffect(() => {
     actualizarHistorial();
-  }, [pathname]);
+    
+    // Configurar polling de historial de chats cada 5 segundos
+    const interval = setInterval(actualizarHistorial, 5000);
+    
+    return () => clearInterval(interval);
+  }, [pathname, user?.id]);
 
   const actualizarHistorial = () => {
     if (user?.id) {

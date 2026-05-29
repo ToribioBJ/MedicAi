@@ -11,6 +11,21 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) NU
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS verification_token_expiration DATETIME NULL;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255) NULL;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_password_token_expiration DATETIME NULL;
+-- 1.1 Crear tabla para usuarios de Telegram
+CREATE TABLE IF NOT EXISTS telegram_users (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    telegram_chat_id VARCHAR(100) UNIQUE NOT NULL,
+    username        VARCHAR(150) NULL,
+    first_name      VARCHAR(150) NULL,
+    last_name       VARCHAR(150) NULL,
+    usuario_id      INT NOT NULL,
+    telegram_linking_code VARCHAR(10) NULL,
+    telegram_linking_code_expiration DATETIME NULL,
+    telegram_linking_email VARCHAR(150) NULL,
+    fecha_registro  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_telegram_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. Asegurar que el usuario administrador por defecto sea administrador verificado
 UPDATE usuarios 

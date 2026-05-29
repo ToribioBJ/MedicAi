@@ -25,6 +25,12 @@ export const AdminDashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  const [activeTab, setActiveTab] = useState<'web' | 'telegram'>('web');
+  const [telegramUsers, setTelegramUsers] = useState<any[]>([]);
+  const [tgLoading, setTgLoading] = useState(false);
+  const [tgSearchTerm, setTgSearchTerm] = useState('');
+
+
   // Selected User for Sidebar details
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
 
@@ -79,9 +85,54 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  const fetchTelegramUsers = async () => {
+    setTgLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/usuarios/telegram', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTelegramUsers(data);
+      }
+    } catch (err) {
+      console.error("Error fetching telegram users:", err);
+    } finally {
+      setTgLoading(false);
+    }
+  };
+
+  const handleUnlinkTelegramAdmin = async (userId: number) => {
+    setActionLoading(userId);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const response = await fetch(`http://localhost:8000/api/usuarios/${userId}/unlink-telegram`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        setSuccessMsg("Usuario de Telegram desvinculado con éxito.");
+        fetchTelegramUsers();
+        fetchUsuarios();
+      } else {
+        throw new Error("No se pudo desvincular al usuario.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Error al desvincular");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   useEffect(() => {
     fetchUsuarios();
     fetchHealthStatus();
+    fetchTelegramUsers();
   }, []);
 
   const handleToggleEstado = async (userId: number, currentActivo: boolean) => {
@@ -162,6 +213,20 @@ export const AdminDashboardPage = () => {
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const telegramUsersFiltrados = telegramUsers.filter(tg => {
+    const term = tgSearchTerm.toLowerCase();
+    return (
+      (tg.first_name && tg.first_name.toLowerCase().includes(term)) ||
+      (tg.last_name && tg.last_name.toLowerCase().includes(term)) ||
+      (tg.username && tg.username.toLowerCase().includes(term)) ||
+      tg.telegram_chat_id.includes(term) ||
+      (tg.linked && tg.web_user && (
+        tg.web_user.nombre.toLowerCase().includes(term) ||
+        tg.web_user.email.toLowerCase().includes(term)
+      ))
+    );
+  });
+
   // Estadísticas
   const stats = {
     total: usuarios.length,
@@ -193,8 +258,9 @@ export const AdminDashboardPage = () => {
           onClick={() => {
             fetchUsuarios();
             fetchHealthStatus();
+            fetchTelegramUsers();
           }}
-          disabled={loading || healthLoading}
+          disabled={loading || healthLoading || tgLoading}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 transition shadow-sm font-bold disabled:opacity-50 cursor-pointer ${isDark
             ? 'bg-white/5 border-white/10 text-slate-200 hover:border-[var(--color-accent)] hover:text-white'
             : 'bg-white border-slate-200 text-slate-700 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
@@ -319,13 +385,52 @@ export const AdminDashboardPage = () => {
 
       </div>
 
+      {/* Selector de Pestañas */}
+      <div className="flex gap-4 border-b border-slate-100 dark:border-white/5 pb-2">
+        <button
+          onClick={() => { setActiveTab('web'); setSelectedUser(null); }}
+          className={`pb-3 px-4 text-sm font-extrabold transition-all relative ${
+            activeTab === 'web'
+              ? 'text-[var(--color-accent)] font-extrabold'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+          }`}
+        >
+          <span>Usuarios del Sistema (Web)</span>
+          {activeTab === 'web' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-accent)] rounded-full animate-in fade-in duration-300" />
+          )}
+        </button>
+        <button
+          onClick={() => { setActiveTab('telegram'); setSelectedUser(null); }}
+          className={`pb-3 px-4 text-sm font-extrabold transition-all relative flex items-center gap-2 ${
+            activeTab === 'telegram'
+              ? 'text-[var(--color-accent)] font-extrabold'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+          }`}
+        >
+          <span>Usuarios de Telegram</span>
+          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+            activeTab === 'telegram'
+              ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+              : 'bg-slate-100 dark:bg-white/5 text-slate-400'
+          }`}>
+            {telegramUsers.length}
+          </span>
+          {activeTab === 'telegram' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-accent)] rounded-full animate-in fade-in duration-300" />
+          )}
+        </button>
+      </div>
+
       {/* Main Card with Table */}
       <div className={`rounded-[2rem] border shadow-[0_15px_40px_rgba(0,0,0,0.015)] overflow-hidden transition-colors duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'
         }`}>
 
-        {/* Table Search Header */}
-        <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-slate-100'
-          }`}>
+        {activeTab === 'web' ? (
+          <>
+            {/* Table Search Header */}
+            <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-slate-100'
+              }`}>
           <div>
             <h2 className={`text-lg font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>Listado Clínico de Usuarios</h2>
             <p className="text-xs text-slate-400 mt-1">Selecciona una fila para ver el historial y controles detallados.</p>
@@ -509,6 +614,126 @@ export const AdminDashboardPage = () => {
               </tbody>
             </table>
           </div>
+        )}
+          </>
+        ) : (
+          <>
+            {/* Table Search Header for Telegram */}
+            <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
+              <div>
+                <h2 className={`text-lg font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>Chats de Telegram Registrados</h2>
+                <p className="text-xs text-slate-400 mt-1">Supervisa las cuentas que interactúan con el bot de Telegram.</p>
+              </div>
+              <div className="relative w-full sm:w-[320px] flex items-center group">
+                <Search className="absolute left-4 text-slate-400 group-hover:text-[var(--color-accent)] transition-colors" size={18} />
+                <input
+                  type="text"
+                  placeholder="Buscar por alias, chat ID o cuenta asociada..."
+                  value={tgSearchTerm}
+                  onChange={(e) => setTgSearchTerm(e.target.value)}
+                  className={`w-full placeholder-slate-400 pl-11 pr-5 py-3 rounded-2xl text-[14px] outline-none border-2 transition shadow-sm font-medium ${isDark
+                    ? 'bg-white/5 text-white border-white/10 focus:border-[var(--color-accent)] focus:bg-[#0E1320]'
+                    : 'bg-slate-50 text-slate-900 border-slate-100 focus:border-[var(--color-accent)] focus:bg-white'
+                    }`}
+                />
+              </div>
+            </div>
+
+            {/* Telegram Content */}
+            {tgLoading ? (
+              <div className="flex flex-col justify-center items-center py-20 space-y-4">
+                <Loader2 className="w-12 h-12 animate-spin" style={{ color: 'var(--color-accent)' }} />
+                <span className="text-slate-400 font-bold">Cargando base de datos de Telegram...</span>
+              </div>
+            ) : telegramUsersFiltrados.length === 0 ? (
+              <div className="flex flex-col justify-center items-center py-20 space-y-2">
+                <ShieldAlert size={48} className={isDark ? 'text-slate-600' : 'text-slate-300'} />
+                <span className="text-slate-400 font-bold">No se encontraron chats de Telegram.</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className={`border-b text-slate-400 text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${isDark ? 'bg-white/[0.02] border-white/10' : 'bg-slate-50/50 border-slate-100'}`}>
+                      <th className="py-4 px-6">Chat de Telegram</th>
+                      <th className="py-4 px-6">ID Chat</th>
+                      <th className="py-4 px-6 text-center">Estado Vinculación</th>
+                      <th className="py-4 px-6">Cuenta Web Asociada</th>
+                      <th className="py-4 px-6">Primer Contacto</th>
+                      <th className="py-4 px-6 text-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y transition-colors duration-300 ${isDark ? 'divide-white/10' : 'divide-slate-100'}`}>
+                    {telegramUsersFiltrados.map((tg) => {
+                      return (
+                        <tr key={tg.id} className={isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/30'}>
+                          <td className="py-4 px-6 font-bold">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-blue-500/10 text-blue-500">
+                                T
+                              </div>
+                              <div>
+                                <div className={isDark ? 'text-white' : 'text-slate-800'}>
+                                  {tg.first_name || ''} {tg.last_name || ''}
+                                </div>
+                                {tg.username && (
+                                  <div className="text-xs text-blue-500">@{tg.username}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 font-mono text-xs">{tg.telegram_chat_id}</td>
+                          <td className="py-4 px-6 text-center">
+                            {tg.linked ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 uppercase">
+                                Vinculado
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-slate-500/10 text-slate-500 border-slate-500/20 uppercase">
+                                Invitado
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-xs font-semibold">
+                            {tg.linked && tg.web_user ? (
+                              <div>
+                                <div className={isDark ? 'text-white' : 'text-slate-800'}>{tg.web_user.nombre}</div>
+                                <div className="text-slate-400 mt-0.5">{tg.web_user.email}</div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic font-normal">Sin cuenta oficial</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-sm text-slate-500">
+                            {new Date(tg.fecha_registro).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            {tg.linked && tg.web_user && (
+                              <button
+                                onClick={() => handleUnlinkTelegramAdmin(tg.web_user.id)}
+                                disabled={actionLoading === tg.web_user.id}
+                                className="flex items-center gap-1.5 mx-auto font-bold text-xs py-2 px-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white cursor-pointer disabled:opacity-50 transition-all"
+                              >
+                                {actionLoading === tg.web_user.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <span>Desvincular</span>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
       </div>

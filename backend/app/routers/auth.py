@@ -35,6 +35,10 @@ class VerifyCodeRequest(BaseModel):
     code: str
 
 
+class ResendCodeRequest(BaseModel):
+    email: EmailStr
+
+
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 
@@ -216,3 +220,42 @@ def verificar_codigo(req: VerifyCodeRequest, db: Session = Depends(get_db)):
         "role": user.role,
         "email": user.email
     }
+
+
+@router.post("/resend-code", status_code=200)
+def reenviar_codigo(
+    req: ResendCodeRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Genera un nuevo código OTP y lo envía por correo al usuario para la verificación de su cuenta.
+    """
+    user = db.query(Usuario).filter(Usuario.email == req.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No se encontró ninguna cuenta registrada con este correo electrónico."
+        )
+        
+    if user.email_verified:
+        return {"message": "Esta cuenta ya ha sido verificada. Puedes iniciar sesión."}
+
+    # Generar un nuevo código OTP de 6 dígitos
+    verification_code = f"{secrets.randbelow(1000000):06d}"
+    expiration = datetime.utcnow() + timedelta(hours=24)
+
+    user.verification_token = verification_code
+    user.verification_token_expiration = expiration
+    db.commit()
+
+    # Enviar el correo en segundo plano
+    from app.services.email_service import enviar_correo_verificacion
+    background_tasks.add_task(
+        enviar_correo_verificacion,
+        destinatario=user.email,
+        nombre=user.nombre,
+        codigo=verification_code
+    )
+
+    return {"message": "Se ha reenviado un nuevo código de verificación a tu correo electrónico."}

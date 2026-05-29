@@ -2,12 +2,15 @@ from .models import (
     Usuario,
     Cita,
     Conversacion,
-    MensajeChat
+    MensajeChat,
+    TelegramUser
 )
 
 __all__ = [
     "Usuario",
     "Cita",
     "Conversacion",
-    "MensajeChat"
+    "MensajeChat",
+    "TelegramUser"
 ]
+

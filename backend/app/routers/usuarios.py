@@ -168,6 +168,59 @@ def obtener_estado_salud(
     return health
 
 
+@router.get("/telegram")
+def listar_usuarios_telegram(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_admin_user)
+):
+    """
+    Lista todos los chats de Telegram registrados. Solo para administradores.
+    """
+    from app.models.models import TelegramUser
+    tgs = db.query(TelegramUser).all()
+    res = []
+    for tg in tgs:
+        web_user = tg.usuario
+        is_guest = web_user.email.endswith("@telegram.medicai") if web_user else True
+        res.append({
+            "id": tg.id,
+            "telegram_chat_id": tg.telegram_chat_id,
+            "username": tg.username,
+            "first_name": tg.first_name,
+            "last_name": tg.last_name,
+            "fecha_registro": tg.fecha_registro,
+            "linked": not is_guest,
+            "web_user": {
+                "id": web_user.id,
+                "nombre": web_user.nombre,
+                "email": web_user.email
+            } if (web_user and not is_guest) else None
+        })
+    return res
+
+
+@router.get("/{usuario_id}/telegram-status")
+def obtener_estado_telegram(usuario_id: int, db: Session = Depends(get_db)):
+    """
+    Obtiene el estado de vinculación a Telegram del usuario.
+    """
+    from app.models.models import TelegramUser
+    tg = db.query(TelegramUser).filter(TelegramUser.usuario_id == usuario_id).first()
+    if tg:
+        web_user = tg.usuario
+        is_guest = web_user.email.endswith("@telegram.medicai") if web_user else True
+        if not is_guest:
+            return {
+                "linked": True,
+                "telegram_chat_id": tg.telegram_chat_id,
+                "username": tg.username,
+                "first_name": tg.first_name,
+                "last_name": tg.last_name,
+                "fecha_registro": tg.fecha_registro
+            }
+    return {"linked": False}
+
+
 @router.get("/{usuario_id}", response_model=UsuarioOut)
 def obtener(usuario_id: int, db: Session = Depends(get_db)):
     u = db.query(Usuario).filter(Usuario.id == usuario_id).first()
@@ -296,6 +349,43 @@ def cambiar_estado(
     return u
 
 
+@router.put("/{usuario_id}/unlink-telegram")
+def desvincular_telegram(usuario_id: int, db: Session = Depends(get_db)):
+    """
+    Desvincula la cuenta de Telegram de un usuario.
+    """
+    from app.models.models import TelegramUser, Usuario
+    import secrets
+
+    tg = db.query(TelegramUser).filter(TelegramUser.usuario_id == usuario_id).first()
+    if not tg:
+        raise HTTPException(404, "No hay cuenta de Telegram vinculada a este usuario.")
+
+    chat_id = tg.telegram_chat_id
+    guest_email = f"telegram_{chat_id}@telegram.medicai"
+    guest_user = db.query(Usuario).filter(Usuario.email == guest_email).first()
+    if not guest_user:
+        guest_user = Usuario(
+            email=guest_email,
+            nombre=f"Usuario Telegram ({chat_id})",
+            password_hash=secrets.token_hex(16),
+            activo=True,
+            role="usuario",
+            email_verified=True
+        )
+        db.add(guest_user)
+        db.commit()
+        db.refresh(guest_user)
+
+    tg.usuario_id = guest_user.id
+    tg.telegram_linking_code = None
+    tg.telegram_linking_code_expiration = None
+    tg.telegram_linking_email = None
+    db.commit()
+
+    return {"status": "unlinked"}
+
+
 @router.delete("/{usuario_id}", status_code=204)
 def eliminar(usuario_id: int, db: Session = Depends(get_db)):
     u = db.query(Usuario).filter(Usuario.id == usuario_id).first()
@@ -303,3 +393,4 @@ def eliminar(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Usuario no encontrado")
     u.activo = False
     db.commit()
+

@@ -71,3 +71,20 @@ class MensajeChat(Base):
     fecha_envio = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     conversacion = relationship("Conversacion", back_populates="mensajes")
+
+
+class TelegramUser(Base):
+    __tablename__ = "telegram_users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_chat_id = Column(String(100), unique=True, nullable=False, index=True)
+    username = Column(String(150), nullable=True)
+    first_name = Column(String(150), nullable=True)
+    last_name = Column(String(150), nullable=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True)
+    telegram_linking_code = Column(String(10), nullable=True)
+    telegram_linking_code_expiration = Column(DateTime, nullable=True)
+    telegram_linking_email = Column(String(150), nullable=True)
+    fecha_registro = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    usuario = relationship("Usuario")

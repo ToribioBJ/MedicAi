@@ -75,6 +75,6 @@ Después de clonar el repositorio, debes configurar tanto el backend como el fro
    cp .env.example .env
    ```
 4. Inicia el servidor de desarrollo del frontend:
-   ```bash
+   ```bash''
    npm run dev
    ```
