@@ -1,6 +1,5 @@
 from .models import (
     Usuario,
-    Cita,
     Conversacion,
     MensajeChat,
     TelegramUser
@@ -8,7 +7,6 @@ from .models import (
 
 __all__ = [
     "Usuario",
-    "Cita",
     "Conversacion",
     "MensajeChat",
     "TelegramUser"

@@ -26,5 +26,9 @@ class UsuarioOut(UsuarioBase):
     fecha_registro: datetime
     telegram_chat_id: Optional[str] = None
     cant_conversaciones: int = 0
+    cant_mensajes: int = 0
+    tokens_utilizados: int = 0
+    actividad_diaria: dict = {}
+    tokens_por_dia: dict = {}
 
     model_config = ConfigDict(from_attributes=True)

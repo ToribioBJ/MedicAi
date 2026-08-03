@@ -67,6 +67,12 @@ try:
             print(">>> Columna 'imagen' agregada con éxito en la migración de mensajes_chat")
         except Exception:
             pass
+        try:
+            conn.execute(text("ALTER TABLE mensajes_chat ADD COLUMN tokens INT NOT NULL DEFAULT 0"))
+            conn.commit()
+            print(">>> Columna 'tokens' agregada con éxito en la migración de mensajes_chat")
+        except Exception:
+            pass
 except Exception as migration_err:
     print(f">>> Advertencia en la migración de mensajes_chat: {migration_err}")
 

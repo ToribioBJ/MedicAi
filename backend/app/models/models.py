@@ -26,7 +26,6 @@ class Usuario(Base):
     fecha_registro = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    citas = relationship("Cita", back_populates="usuario", cascade="all, delete-orphan")
     conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")
     telegram_user = relationship("TelegramUser", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
 
@@ -35,29 +34,46 @@ class Usuario(Base):
         return len(self.conversaciones)
 
     @property
+    def cant_mensajes(self) -> int:
+        total = 0
+        for conv in self.conversaciones:
+            total += len(conv.mensajes)
+        return total
+
+    @property
     def telegram_chat_id(self) -> Optional[str]:
         if self.telegram_user and not self.email.endswith("@telegram.medicai"):
             return self.telegram_user.telegram_chat_id
         return None
 
+    @property
+    def tokens_utilizados(self) -> int:
+        total = 0
+        for conv in self.conversaciones:
+            for msg in conv.mensajes:
+                if msg.tokens:
+                    total += msg.tokens
+        return total
 
-class Cita(Base):
-    __tablename__ = "citas"
+    @property
+    def actividad_diaria(self) -> dict:
+        activity = {}
+        for conv in self.conversaciones:
+            for msg in conv.mensajes:
+                day_str = msg.fecha_envio.strftime("%Y-%m-%d")
+                activity[day_str] = activity.get(day_str, 0) + 1
+        return activity
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True)
-    fecha_hora = Column(DateTime, nullable=False, index=True)
-    duracion_min = Column(Integer, default=30, nullable=False)
-    motivo = Column(Text)
-    estado = Column(
-        Enum("pendiente", "confirmada", "atendida", "cancelada", "no_asistio"),
-        default="pendiente", nullable=False, index=True
-    )
-    notas = Column(Text)
-    creada_en = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    @property
+    def tokens_por_dia(self) -> dict:
+        tokens_day = {}
+        for conv in self.conversaciones:
+            for msg in conv.mensajes:
+                if msg.tokens:
+                    day_str = msg.fecha_envio.strftime("%Y-%m-%d")
+                    tokens_day[day_str] = tokens_day.get(day_str, 0) + msg.tokens
+        return tokens_day
 
-    usuario = relationship("Usuario", back_populates="citas")
 
 
 class Conversacion(Base):
@@ -81,6 +97,7 @@ class MensajeChat(Base):
     contenido = Column(Text, nullable=False)
     imagen = Column(Text, nullable=True)
     fecha_envio = Column(DateTime, default=datetime.utcnow, nullable=False)
+    tokens = Column(Integer, default=0, nullable=False)
 
     conversacion = relationship("Conversacion", back_populates="mensajes")
 

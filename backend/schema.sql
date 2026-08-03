@@ -1,23 +1,26 @@
 -- =====================================================================
--- MedicAI - Base de Datos Minimalista (MySQL 8.0+)
+-- MedicAI - Base de Datos Unificada para Producción (MySQL 8.0+)
 -- =====================================================================
 
-DROP DATABASE IF EXISTS medicai;
-CREATE DATABASE medicai
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE medicai;
+-- Nota: Si importas en Clever Cloud u otro hosting administrado, 
+-- no es necesario ejecutar CREATE DATABASE ni USE, ya que el hosting 
+-- te asigna una base de datos con un nombre predefinido.
 
 -- =====================================================================
 -- 1. USUARIOS
 -- =====================================================================
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     email           VARCHAR(150) UNIQUE NOT NULL,
     password_hash   VARCHAR(255) NOT NULL,
     nombre          VARCHAR(150) NOT NULL,
     activo          TINYINT(1) NOT NULL DEFAULT 1,
+    role            VARCHAR(50) NOT NULL DEFAULT 'usuario',
+    email_verified  TINYINT(1) NOT NULL DEFAULT 0,
+    verification_token VARCHAR(255) NULL,
+    verification_token_expiration DATETIME NULL,
+    reset_password_token VARCHAR(255) NULL,
+    reset_password_token_expiration DATETIME NULL,
     fecha_registro  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
@@ -25,31 +28,27 @@ CREATE TABLE usuarios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
--- 2. CITAS (Calendario del Usuario)
+-- 2. USUARIOS TELEGRAM
 -- =====================================================================
-CREATE TABLE citas (
+CREATE TABLE IF NOT EXISTS telegram_users (
     id              INT AUTO_INCREMENT PRIMARY KEY,
+    telegram_chat_id VARCHAR(100) UNIQUE NOT NULL,
+    username        VARCHAR(150) NULL,
+    first_name      VARCHAR(150) NULL,
+    last_name       VARCHAR(150) NULL,
     usuario_id      INT NOT NULL,
-    fecha_hora      DATETIME NOT NULL,
-    duracion_min    INT NOT NULL DEFAULT 30,
-    motivo          TEXT,
-    estado          ENUM('pendiente','confirmada','atendida','cancelada','no_asistio')
-                    NOT NULL DEFAULT 'pendiente',
-    notas           TEXT,
-    creada_en       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_citas_usuario (usuario_id),
-    INDEX idx_citas_fecha (fecha_hora),
-    INDEX idx_citas_estado (estado),
-    CONSTRAINT fk_citas_usuario
+    telegram_linking_code VARCHAR(10) NULL,
+    telegram_linking_code_expiration DATETIME NULL,
+    telegram_linking_email VARCHAR(150) NULL,
+    fecha_registro  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_telegram_usuario
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
--- 3. CONVERSACIONES (Chats de IA per Usuario)
+-- 3. CONVERSACIONES (Chats de IA por Usuario)
 -- =====================================================================
-CREATE TABLE conversaciones (
+CREATE TABLE IF NOT EXISTS conversaciones (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id      INT NOT NULL,
     titulo          VARCHAR(255),
@@ -62,12 +61,13 @@ CREATE TABLE conversaciones (
 -- =====================================================================
 -- 4. MENSAJES_CHAT
 -- =====================================================================
-CREATE TABLE mensajes_chat (
+CREATE TABLE IF NOT EXISTS mensajes_chat (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     conversacion_id INT NOT NULL,
     role            ENUM('user','assistant') NOT NULL,
     contenido       TEXT NOT NULL,
     imagen          LONGTEXT NULL,
+    tokens          INT NOT NULL DEFAULT 0,
     fecha_envio     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_mensajes_conversacion (conversacion_id),
     CONSTRAINT fk_mensajes_conversacion
@@ -78,9 +78,7 @@ CREATE TABLE mensajes_chat (
 -- DATOS DE EJEMPLO
 -- =====================================================================
 
-INSERT INTO usuarios (email, password_hash, nombre) VALUES
-('admin@medicai.com',    '$2b$12$KIXoL6Jg3fEYI3p9wqZfUuqQ3vH0Jt5L8bN0aXqZzQYjR4q5a0p6S', 'Administrador MedicAI');
-
-INSERT INTO citas (usuario_id, fecha_hora, motivo, estado) VALUES
-(1, '2026-04-15 09:00:00', 'Chequeo General Mensual', 'confirmada'),
-(1, '2026-04-18 10:00:00', 'Seguimiento', 'pendiente');
+-- Insertar administrador por defecto
+INSERT INTO usuarios (email, password_hash, nombre, role, email_verified) 
+VALUES ('admin@medicai.com', '$2b$12$KIXoL6Jg3fEYI3p9wqZfUuqQ3vH0Jt5L8bN0aXqZzQYjR4q5a0p6S', 'Administrador MedicAI', 'administrador', 1)
+ON DUPLICATE KEY UPDATE role='administrador', email_verified=1;

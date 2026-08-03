@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import ConsultoraLayout from './consultora/layouts/page';
 import ChatbotPage from './consultora/chatbot/page';
-import CalendarioPage from './consultora/calendario/page';
 import ConfiguracionPage from './consultora/configuracion/page';
 import NosotrosPage from './consultora/nosotros/page';
 import LoginPage from './auth/login/page';
@@ -49,7 +48,6 @@ function App() {
         <Route element={<ConsultoraLayout />}>
           <Route index element={<Navigate to="/chatbot" replace />} />
           <Route path="/chatbot/:id?"    element={<ChatbotPage />} />
-          <Route path="/calendario"      element={<CalendarioPage />} />
           <Route path="/configuracion"   element={<ConfiguracionPage />} />
           <Route path="/nosotros"        element={<NosotrosPage />} />
           

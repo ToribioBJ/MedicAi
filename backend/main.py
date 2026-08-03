@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import engine, Base
 from app.models import (
-    Usuario, Cita, Conversacion, MensajeChat, TelegramUser
+    Usuario, Conversacion, MensajeChat, TelegramUser
 )
-from app.routers import usuarios, citas, chatbot, auth
+from app.routers import usuarios, chatbot, auth
 
 
 logging.basicConfig(
@@ -35,23 +35,6 @@ try:
             db.commit()
             db.refresh(admin)
             
-            # Citas semilla
-            from datetime import datetime, timedelta
-            cita1 = Cita(
-                usuario_id=admin.id,
-                fecha_hora=datetime.utcnow() + timedelta(days=1, hours=2),
-                motivo="Chequeo General Mensual",
-                estado="confirmada"
-            )
-            cita2 = Cita(
-                usuario_id=admin.id,
-                fecha_hora=datetime.utcnow() + timedelta(days=4, hours=3),
-                motivo="Seguimiento de consulta",
-                estado="pendiente"
-            )
-            db.add(cita1)
-            db.add(cita2)
-            db.commit()
             logger.info(">>> Datos semilla inicializados con éxito.")
             
         # Asegurar que el usuario administrador semilla esté siempre verificado y con rol administrador
@@ -85,7 +68,6 @@ app.add_middleware(
 )
 
 app.include_router(usuarios.router)
-app.include_router(citas.router)
 app.include_router(chatbot.router)
 app.include_router(auth.router)
 

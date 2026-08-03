@@ -16,7 +16,11 @@ interface Usuario {
   email_verified: boolean;
   fecha_registro: string;
   cant_conversaciones: number;
+  cant_mensajes: number;
   telegram_chat_id?: string | null;
+  tokens_utilizados: number;
+  actividad_diaria: Record<string, number>;
+  tokens_por_dia: Record<string, number>;
 }
 
 export const AdminDashboardPage = () => {
@@ -782,6 +786,7 @@ export const AdminDashboardPage = () => {
                   <th className="py-4 px-6">Rol</th>
                   <th className="py-4 px-6 text-center">Verificación</th>
                   <th className="py-4 px-6 text-center">Telegram</th>
+                  <th className="py-4 px-6 text-center">Tokens</th>
                   <th className="py-4 px-6 text-center">Estado</th>
                   <th className="py-4 px-6">Fecha Registro</th>
                   <th className="py-4 px-6 text-center">Acciones</th>
@@ -878,6 +883,11 @@ export const AdminDashboardPage = () => {
                             No conectado
                           </span>
                         )}
+                      </td>
+
+                      {/* Tokens */}
+                      <td className="py-4 px-6 text-center font-bold text-xs text-slate-500 dark:text-slate-400">
+                        {u.tokens_utilizados || 0}
                       </td>
 
                       {/* Estado Activo */}
@@ -1311,6 +1321,132 @@ export const AdminDashboardPage = () => {
                       </span>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Consumo de Tokens y Actividad */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">Consumo de Tokens y Actividad</h4>
+                
+                <div className={`p-4 rounded-2xl space-y-3 border ${
+                  isDark ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'
+                }`}>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Tokens Utilizados</span>
+                    <span className="font-extrabold text-sm text-[var(--color-accent)]">{selectedUser.tokens_utilizados || 0} tokens</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Total Interacciones</span>
+                    <span className="font-extrabold text-slate-700 dark:text-slate-200">{selectedUser.cant_mensajes || 0} mensajes</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Promedio de Tokens</span>
+                    <span className="font-extrabold text-slate-700 dark:text-slate-200">
+                      {Math.round((selectedUser.tokens_utilizados || 0) / (selectedUser.cant_mensajes || 1))} t/msg
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs border-t border-slate-200/50 dark:border-white/5 pt-2">
+                    <span className="text-slate-400 font-medium">Porcentaje del Sistema</span>
+                    <span className="font-extrabold text-indigo-500">
+                      {(() => {
+                        const totalTokens = usuarios.reduce((acc, u) => acc + (u.tokens_utilizados || 0), 0);
+                        return totalTokens > 0 ? Math.round(((selectedUser.tokens_utilizados || 0) / totalTokens) * 100) : 0;
+                      })()}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Gráfico de Interactividad Diaria */}
+                {(() => {
+                  const dates = Object.keys(selectedUser.tokens_por_dia || {});
+                  if (dates.length === 0) return null;
+
+                  // Ordenar fechas cronológicamente y tomar las últimas 7
+                  const sortedDates = dates.sort((a, b) => a.localeCompare(b)).slice(-7);
+                  const maxTokens = Math.max(...sortedDates.map(d => selectedUser.tokens_por_dia[d] || 0), 1);
+                  const maxMsgs = Math.max(...sortedDates.map(d => selectedUser.actividad_diaria[d] || 0), 1);
+
+                  return (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex justify-between items-center">
+                        <h5 className="font-bold text-[10px] uppercase tracking-wider text-slate-400">Actividad últimos 7 días</h5>
+                        <span className="text-[9px] text-slate-400 font-bold">Mensajes (azul) | Tokens (índigo)</span>
+                      </div>
+                      <div className="h-32 flex items-end justify-between gap-2 px-1">
+                        {sortedDates.map(date => {
+                          const tokens = selectedUser.tokens_por_dia[date] || 0;
+                          const msgs = selectedUser.actividad_diaria[date] || 0;
+                          
+                          const tokensHeight = (tokens / maxTokens) * 100;
+                          const msgsHeight = (msgs / maxMsgs) * 100;
+
+                          // Formatear fecha para mostrar día y mes (ej. 30 May) without timezone offsets
+                          const dateParts = date.split('-');
+                          const dayLabel = dateParts[2] || '';
+                          const monthNum = parseInt(dateParts[1] || '0', 10);
+                          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                          const monthLabel = months[monthNum - 1] || '';
+                          const label = `${dayLabel} ${monthLabel}`;
+
+                          return (
+                            <div key={date} className="flex-1 flex flex-col items-center group/bar relative">
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full mb-2 bg-slate-900 text-white text-[9px] p-2 rounded-lg opacity-0 pointer-events-none group-hover/bar:opacity-100 transition-opacity z-50 shadow-md w-28 text-center">
+                                <p className="font-bold">{date}</p>
+                                <p className="text-sky-400">{msgs} {msgs === 1 ? 'mensaje' : 'mensajes'}</p>
+                                <p className="text-indigo-400">{tokens} tokens</p>
+                              </div>
+
+                              {/* Bars side by side */}
+                              <div className="w-full flex items-end justify-center gap-0.5 h-20">
+                                {/* Messages Bar */}
+                                <div 
+                                  className="w-2.5 rounded-t-sm transition-all duration-500 bg-sky-500 hover:brightness-110" 
+                                  style={{ height: `${Math.max(msgsHeight, 5)}%` }}
+                                />
+                                {/* Tokens Bar */}
+                                <div 
+                                  className="w-2.5 rounded-t-sm transition-all duration-500 bg-indigo-500 hover:brightness-110" 
+                                  style={{ height: `${Math.max(tokensHeight, 5)}%` }}
+                                />
+                              </div>
+
+                              {/* Label */}
+                              <span className="text-[9px] font-bold text-slate-400 mt-1.5 whitespace-nowrap leading-none scale-90">{label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <h5 className="font-bold text-[10px] uppercase tracking-wider text-slate-400">Desglose Diario</h5>
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {Object.keys(selectedUser.tokens_por_dia || {}).length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">Sin actividad registrada</p>
+                  ) : (
+                    Object.keys(selectedUser.tokens_por_dia)
+                      .sort((a, b) => b.localeCompare(a))
+                      .map((date) => {
+                        const tokens = selectedUser.tokens_por_dia[date] || 0;
+                        const msgs = selectedUser.actividad_diaria[date] || 0;
+                        return (
+                          <div key={date} className={`flex justify-between items-center p-2.5 rounded-xl border text-xs ${
+                            isDark ? 'bg-white/[0.01] border-white/5' : 'bg-white border-slate-100'
+                          }`}>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-slate-700 dark:text-slate-200">{date}</span>
+                              <span className="text-[10px] text-slate-400">{msgs} {msgs === 1 ? 'mensaje' : 'mensajes'} (Actividad)</span>
+                            </div>
+                            <span className="font-bold text-indigo-500">{tokens} tokens</span>
+                          </div>
+                        );
+                      })
+                  )}
                 </div>
               </div>
 

@@ -297,7 +297,7 @@ export const RegisterPage = () => {
             Gestión Inteligente de Salud
           </h2>
           <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-            Regístrate para agendar citas, evaluar diagnósticos preliminares visuales y automatizar el triaje mediante inteligencia artificial.
+            Regístrate para realizar consultas inteligentes, evaluar diagnósticos preliminares visuales y automatizar el triaje mediante inteligencia artificial.
           </p>
 
           <div className="flex gap-4 mt-8">

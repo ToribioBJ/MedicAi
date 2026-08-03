@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
-  MessageSquare, CalendarDays, Settings, 
+  MessageSquare, Settings, 
   Plus, History, Trash2, User2, ChevronRight, LogOut, ShieldCheck
 } from 'lucide-react';
 import logoMedicAI from '../../img/logo-medica.png';
@@ -66,27 +66,25 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
     <NavLink
       to={to}
       onClick={() => closeMobile?.()}
-      className={`relative w-full h-[60px] flex items-center group/item transition-all duration-300 ${
+      className={`relative w-full h-[60px] flex items-center px-4 group/item transition-all duration-300 ${
         isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
       }`}
     >
-      {/* Icon Centerer */}
-      <div className="w-20 h-full flex items-center justify-center shrink-0">
-        <div 
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-            isActive ? 'text-white shadow-lg' : isDark ? 'text-white/40' : 'text-slate-500'
-          }`}
-          style={isActive ? { 
-            background: `linear-gradient(135deg, ${safeAccentColor} 0%, #4f46e5 100%)`, 
-            boxShadow: `0 8px 20px -4px ${safeAccentColor}60` 
-          } : {}}
-        >
-          <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-        </div>
+      {/* Icon Container */}
+      <div 
+        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${
+          isActive ? 'text-white shadow-lg' : isDark ? 'text-white/40' : 'text-slate-500'
+        }`}
+        style={isActive ? { 
+          background: `linear-gradient(135deg, ${safeAccentColor} 0%, #4f46e5 100%)`, 
+          boxShadow: `0 8px 20px -4px ${safeAccentColor}60` 
+        } : {}}
+      >
+        <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
       </div>
       
       {/* Sliding Label */}
-      <div className={`flex-1 transition-all duration-500 ml-2 whitespace-nowrap overflow-hidden flex items-center justify-between pr-6 ${
+      <div className={`flex-1 transition-all duration-500 ml-5 whitespace-nowrap overflow-hidden flex items-center justify-between pr-2 ${
         isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
       }`}>
         <span className={`font-black text-[14px] ${
@@ -111,7 +109,7 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
     }`}>
       
       {/* Branding */}
-      <div className="w-full h-14 flex items-center mt-10 mb-14 shrink-0 px-4">
+      <div className="w-full h-14 flex items-center mt-6 mb-8 shrink-0 px-4">
          <div className="w-12 h-full flex items-center justify-center shrink-0">
             <div className="w-12 h-12 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 active:scale-95">
               <img src={logoMedicAI} alt="MedicAI" className="w-10 h-10 object-contain drop-shadow-xl" />
@@ -126,7 +124,7 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
       </div>
 
       {/* Primary Action */}
-      <div className="w-full flex items-center mb-10 shrink-0 px-4">
+      <div className="w-full flex items-center mb-6 shrink-0 px-4">
         <button
           onClick={handleNuevoChat}
           className="relative w-full h-[60px] flex items-center group/btn transition-all duration-300"
@@ -137,7 +135,7 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
                 <Plus size={26} className="text-white" strokeWidth={3} />
              </div>
           </div>
-          <div className={`transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden flex flex-col items-start leading-none ${
+          <div className={`transition-all duration-500 ml-5 whitespace-nowrap overflow-hidden flex flex-col items-start leading-none ${
              isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}>
             <span className={`text-[15px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Nueva consulta</span>
@@ -152,7 +150,6 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
         {(() => {
           const menuItems: NavItem[] = [
             { to: '/chatbot',   label: 'Asistente Médico', icon: MessageSquare },
-            { to: '/calendario', label: 'Calendario',      icon: CalendarDays },
           ];
           if (user?.role === 'administrador') {
             menuItems.push({ to: '/admin', label: 'Administración', icon: ShieldCheck });
@@ -169,11 +166,11 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
         })()}
 
         {/* History Section */}
-        <div className={`pt-8 transition-all duration-500 px-6 ${
+        <div className={`pt-6 transition-all duration-500 px-4 ${
           isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
-          <div className="mb-4 flex items-center gap-2">
-            <History size={14} className={isDark ? 'text-white/20' : 'text-slate-400'} />
+          <div className="mb-3 flex items-center gap-3 pl-2">
+            <History size={15} className={isDark ? 'text-white/20' : 'text-slate-400'} />
             <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Historial</span>
           </div>
           <div className="space-y-1">
@@ -223,7 +220,7 @@ export const Sidebar = ({ isMobileOpen, closeMobile }: { isMobileOpen?: boolean,
              </div>
            </div>
            
-           <div className={`flex-1 flex items-center justify-between transition-all duration-500 ml-4 whitespace-nowrap overflow-hidden ${
+           <div className={`flex-1 flex items-center justify-between transition-all duration-500 ml-5 whitespace-nowrap overflow-hidden ${
               isMobileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
            }`}>
               <div className="flex flex-col overflow-hidden pr-2">

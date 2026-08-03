@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import httpx
-from telegram import Update
+from telegram import Update, BotCommand
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -112,8 +112,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             saludo = (
                 f"¡Hola de nuevo, *{user.nombre}*! 🩺🤖\n\n"
                 f"Tu cuenta de Telegram está vinculada a tu perfil de MedicAI (`{user.email}`).\n\n"
-                f"¿En qué te puedo asistir hoy? Puedes hacerme consultas médicas o "
-                f"pedirme que agende una cita en tu calendario."
+                f"¿En qué te puedo asistir hoy? Puedes hacerme consultas médicas."
             )
         else:
             # Modo Invitado
@@ -121,7 +120,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"¡Hola! Bienvenido a *MedicAI* 🩺🤖\n\n"
                 f"Soy tu asistente virtual de salud. Actualmente estás chateando en *Modo Invitado*.\n\n"
                 f"Puedes hacerme consultas médicas generales y analizar fotos de tus síntomas visibles.\n\n"
-                f"🔑 *¿Quieres agendar citas en tu calendario web?*\n"
+                f"🔑 *¿Quieres vincular tu cuenta web?*\n"
                 f"Vincula tu cuenta usando el comando:\n"
                 f"`/vincular tu_correo@ejemplo.com`"
             )
@@ -258,7 +257,7 @@ async def confirmar_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"🎉 ¡Vinculación Exitosa!\n\n"
             f"Tu cuenta de Telegram ahora está vinculada a *{web_user.nombre}* (`{web_user.email}`).\n\n"
-            f"Ya puedes realizar consultas y agendar citas médicas en tu calendario de MedicAI directamente desde aquí.",
+            f"Ya puedes realizar consultas médicas de MedicAI directamente desde aquí.",
             parse_mode="Markdown"
         )
     except Exception as e:
@@ -312,6 +311,65 @@ async def desvincular_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("❌ Ocurrió un error al desvincular tu cuenta.")
     finally:
         db.close()
+
+
+async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Manejador del comando /info"""
+    chat_id = str(update.effective_chat.id)
+    db = SessionLocal()
+    try:
+        tg_user = db.query(TelegramUser).filter(TelegramUser.telegram_chat_id == chat_id).first()
+        if not tg_user:
+            await update.message.reply_text("⚠️ No tienes ningún perfil registrado. Inicia el bot con /start.")
+            return
+
+        user = tg_user.usuario
+        is_guest = user.email.endswith("@telegram.medicai") if user else True
+
+        if is_guest:
+            info_texto = (
+                "ℹ️ *Información del Perfil - MedicAI:*\n\n"
+                f"• *ID Chat:* `{chat_id}`\n"
+                "• *Modo:* `Invitado (Sin cuenta web)`\n"
+                f"• *Primer contacto:* {tg_user.fecha_registro.strftime('%d/%m/%Y')}\n\n"
+                "💡 Vincula tu cuenta web usando `/vincular tu_correo@ejemplo.com` para sincronizar con tu historial clínico principal."
+            )
+        else:
+            conversaciones_count = len(user.conversaciones)
+            tokens_total = user.tokens_utilizados
+
+            info_texto = (
+                "ℹ️ *Información del Perfil - MedicAI:*\n\n"
+                f"• *ID Chat:* `{chat_id}`\n"
+                "• *Modo:* `Vinculado (Cuenta Oficial)`\n"
+                f"• *Usuario:* {user.nombre}\n"
+                f"• *Correo:* `{user.email}`\n"
+                f"• *Conversaciones:* {conversaciones_count}\n"
+                f"• *Tokens Utilizados:* {tokens_total} tokens\n"
+                f"• *Vinculado el:* {tg_user.fecha_registro.strftime('%d/%m/%Y')}"
+            )
+        await update.message.reply_text(info_texto, parse_mode="Markdown")
+    except Exception as e:
+        logger.error(f"Error en comando /info: {e}")
+        await update.message.reply_text("❌ Hubo un error al recuperar la información del perfil.")
+    finally:
+        db.close()
+
+
+async def ayuda_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Manejador del comando /ayuda"""
+    ayuda_texto = (
+        "🩺 *Comandos Disponibles en MedicAI:*\n\n"
+        "• `/start` - Iniciar conversación y ver estado actual.\n"
+        "• `/vincular correo@ejemplo.com` - Vincular tu cuenta de MedicAI.\n"
+        "• `/confirmar CÓDIGO` - Confirmar el código OTP de verificación.\n"
+        "• `/desvincular` - Desvincular tu cuenta y volver a Modo Invitado.\n"
+        "• `/info` - Ver detalles de tu perfil y tokens consumidos.\n"
+        "• `/ayuda` - Mostrar esta guía de ayuda.\n\n"
+        "💬 *¿Cómo hablar conmigo?*\n"
+        "Envía cualquier pregunta sobre salud, síntomas o información médica, o adjunta una foto nítida de un síntoma visible para una evaluación preliminar informativa."
+    )
+    await update.message.reply_text(ayuda_texto, parse_mode="Markdown")
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -377,7 +435,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     return
 
         # Generar respuesta de la IA
-        respuesta_ia = chat_service.responder(
+        respuesta_ia, tokens_usados = chat_service.responder(
             mensaje_actual=text_msg,
             historial=historial_ia,
             db=db,
@@ -390,12 +448,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             conversacion_id=conv.id,
             role="user",
             contenido=text_msg if text_msg else "Analiza esta imagen médica por favor.",
-            imagen=base64_image
+            imagen=base64_image,
+            tokens=0
         )
         msg_bot = MensajeChat(
             conversacion_id=conv.id,
             role="assistant",
-            contenido=respuesta_ia
+            contenido=respuesta_ia,
+            tokens=tokens_usados
         )
         db.add(msg_user)
         db.add(msg_bot)
@@ -432,6 +492,8 @@ async def run_polling():
         telegram_app.add_handler(CommandHandler("vincular", vincular_command))
         telegram_app.add_handler(CommandHandler("confirmar", confirmar_command))
         telegram_app.add_handler(CommandHandler("desvincular", desvincular_command))
+        telegram_app.add_handler(CommandHandler("info", info_command))
+        telegram_app.add_handler(CommandHandler("ayuda", ayuda_command))
         
         # Manejador general de mensajes (texto y fotos)
         telegram_app.add_handler(
@@ -440,6 +502,22 @@ async def run_polling():
 
         # Inicializar y arrancar
         await telegram_app.initialize()
+
+        # Configurar menú de comandos del Bot en Telegram
+        try:
+            menu_commands = [
+                BotCommand("start", "Iniciar bot y ver estado"),
+                BotCommand("vincular", "Vincular cuenta de MedicAI"),
+                BotCommand("confirmar", "Confirmar el código OTP"),
+                BotCommand("desvincular", "Desvincular cuenta web"),
+                BotCommand("info", "Ver detalles del perfil y consumo de tokens"),
+                BotCommand("ayuda", "Mostrar comandos y guía de uso")
+            ]
+            await telegram_app.bot.set_my_commands(menu_commands)
+            logger.info("Menú de comandos configurado exitosamente en Telegram.")
+        except Exception as cmd_err:
+            logger.warning(f"No se pudo configurar el menú de comandos en Telegram: {cmd_err}")
+
         await telegram_app.start()
         await telegram_app.updater.start_polling(drop_pending_updates=True)
         

@@ -303,7 +303,7 @@ export default function ConfiguracionPage() {
                     Tu cuenta de MedicAI está vinculada de manera segura con tu cuenta de Telegram (ID de chat: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 font-mono">{telegramChatId}</code>).
                   </p>
                   <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                    Puedes utilizar tu bot de Telegram para chatear con la IA de salud, consultar síntomas, analizar imágenes clínicas y agendar citas automáticamente en tu calendario MedicAI.
+                    Puedes utilizar tu bot de Telegram para chatear con la IA de salud, consultar síntomas y analizar imágenes clínicas.
                   </p>
                   <button
                     onClick={handleDesvincularTelegram}
@@ -327,7 +327,7 @@ export default function ConfiguracionPage() {
                   </div>
                   
                   <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
-                    Para conectar MedicAI con tu bot de Telegram y poder agendar citas directamente mediante notas de voz o texto, sigue estos pasos:
+                    Para conectar MedicAI con tu bot de Telegram y poder realizar consultas directamente mediante notas de voz o texto, sigue estos pasos:
                   </p>
                   
                   <ol className={`text-xs list-decimal pl-4 space-y-2 font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>

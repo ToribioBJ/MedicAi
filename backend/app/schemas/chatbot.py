@@ -13,6 +13,7 @@ class MensajeCreate(MensajeBase):
 class MensajeOut(MensajeBase):
     id: int
     fecha_envio: datetime
+    tokens: int = 0
     model_config = ConfigDict(from_attributes=True)
 
 class ConversacionBase(BaseModel):
