@@ -533,10 +533,14 @@ async def run_polling():
         logger.exception(f"Falla crítica en el bot de Telegram: {e}")
     finally:
         if telegram_app:
-            if telegram_app.updater and telegram_app.updater.running:
-                await telegram_app.updater.stop()
-            await telegram_app.stop()
-            await telegram_app.shutdown()
+            try:
+                if telegram_app.updater and telegram_app.updater.running:
+                    await telegram_app.updater.stop()
+                if getattr(telegram_app, 'running', False):
+                    await telegram_app.stop()
+                await telegram_app.shutdown()
+            except Exception as shutdown_err:
+                logger.warning(f"Advertencia al apagar telegram_app: {shutdown_err}")
             logger.info("Bot de Telegram apagado de forma segura.")
 
 
